@@ -8,10 +8,11 @@ namespace LitS3
     /// Provides a base class which encapsulates an Amazon REST WebResponse and sets up an
     /// appropriate XmlReader for the kinds of XML data Amazon sends back.
     /// </summary>
-    public abstract class S3Response
+    public abstract class S3Response : IDisposable
     {
-        HttpWebResponse response;
         XmlReader reader;
+
+        public HttpWebResponse WebResponse { get; private set; }
 
         /// <summary>
         /// Gets an XmlReader for parsing Amazon XML responses, creating one if necessary and
@@ -25,10 +26,10 @@ namespace LitS3
         protected S3Response(HttpWebResponse response)
         {
             CheckResponse(response);
-            this.response = response;
+            this.WebResponse = response;
         }
 
-        void CheckResponse(HttpWebResponse response)
+        static void CheckResponse(HttpWebResponse response)
         {
             // see if the server told us to screw off
             if (response.StatusCode == HttpStatusCode.TemporaryRedirect &&
@@ -38,13 +39,26 @@ namespace LitS3
 
         XmlReader CreateXmlReader()
         {
-            var reader = new XmlTextReader(response.GetResponseStream())
+            var reader = new XmlTextReader(WebResponse.GetResponseStream())
             {
                 WhitespaceHandling = WhitespaceHandling.Significant,
                 Namespaces = false
             };
             reader.MoveToContent();
             return reader;
+        }
+
+        /// <summary>
+        /// Just a shortcut to close our WebResponse.
+        /// </summary>
+        public void Close()
+        {
+            WebResponse.Close();
+        }
+
+        void IDisposable.Dispose()
+        {
+            Close();
         }
     }
 }

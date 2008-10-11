@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.IO;
 
 namespace LitS3
 {
@@ -146,6 +147,46 @@ namespace LitS3
         {
             AuthorizeIfNecessary();
             return (HttpWebResponse)WebRequest.GetResponse();
+        }
+
+        /// <summary>
+        /// Gets the S3 REST request stream asynchronously. This method is just a shortcut for the
+        /// BeginGetRequestStream() method of our WebRequest property. It also calls Authorize() if
+        /// necessary.
+        /// </summary>
+        public IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
+        {
+            AuthorizeIfNecessary();
+            return WebRequest.BeginGetRequestStream(callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous call to BeginGetRequestStream(). This method is just a shortcut
+        /// for the EndGetRequestStream() method of our WebRequest property.
+        /// </summary>
+        public Stream EndGetRequestStream(IAsyncResult asyncResult)
+        {
+            return WebRequest.EndGetRequestStream(asyncResult);
+        }
+
+        /// <summary>
+        /// Gets the S3 REST response asynchronously. This method is just a shortcut for the
+        /// BeginGetResponse() method of our WebRequest property. It also calls Authorize() if
+        /// necessary.
+        /// </summary>
+        public IAsyncResult BeginGetResponse(AsyncCallback callback, object state)
+        {
+            AuthorizeIfNecessary();
+            return WebRequest.BeginGetResponse(callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous call to BeginGetResponse(). This method is just a shortcut
+        /// for the EndGetResponse() method of our WebRequest property.
+        /// </summary>
+        public HttpWebResponse EndGetResponse(IAsyncResult asyncResult)
+        {
+            return (HttpWebResponse)WebRequest.EndGetResponse(asyncResult);
         }
     }
 }
