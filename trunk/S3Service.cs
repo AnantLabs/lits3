@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
+using LitS3.RestApi;
 
 namespace LitS3
 {
@@ -28,13 +29,23 @@ namespace LitS3
             this.UseSubdomains = true;
         }
 
-        public ListAllMyBucketsResult ListAllMyBuckets()
+        public List<Bucket> GetAllBuckets(out Identity owner)
         {
             HttpWebRequest request = CreateWebRequest("GET", null, null);
             AuthorizeRequest(request);
 
             using (WebResponse response = request.GetResponse())
-                return ListAllMyBucketsResult.FromXml(CreateXmlReader(response));
+            {
+                var result = ListAllMyBucketsResult.FromXml(CreateXmlReader(response));
+                owner = result.Owner;
+                return result.Buckets;
+            }
+        }
+
+        public List<Bucket> GetAllBuckets()
+        {
+            Identity owner;
+            return GetAllBuckets(out owner);
         }
 
         XmlTextReader CreateXmlReader(WebResponse response)
