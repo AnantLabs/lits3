@@ -45,8 +45,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bucket.cs" />
+    <Compile Include="BucketAccess.cs" />
+    <Compile Include="BucketNameChecking.cs" />
     <Compile Include="Identity.cs" />
-    <Compile Include="RestApi\ListAllMyBuckets.cs" />
+    <Compile Include="S3Request.cs" />
+    <Compile Include="S3Response.cs" />
+    <Compile Include="RestApi\GetAllBuckets.cs" />
+    <Compile Include="RestApi\ListBucket.cs" />
     <Compile Include="S3Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
