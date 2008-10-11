@@ -46,7 +46,7 @@
   <ItemGroup>
     <Compile Include="Bucket.cs" />
     <Compile Include="Identity.cs" />
-    <Compile Include="ListAllMyBucketsResult.cs" />
+    <Compile Include="RestApi\ListAllMyBuckets.cs" />
     <Compile Include="S3Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
