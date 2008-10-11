@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System;
+using System.Xml;
 
 namespace LitS3
 {
@@ -7,14 +8,10 @@ namespace LitS3
         public string ID { get; private set; }
         public string DisplayName { get; private set; }
 
-        private Identity() { }
-
-        public static Identity FromXml(XmlReader reader)
+        internal Identity(XmlReader reader)
         {
             if (reader.IsEmptyElement)
-                return null;
-
-            var identity = new Identity();
+                throw new Exception("Expected a non-empty <Owner> element.");
 
             // Example:
             // <Owner>
@@ -22,11 +19,9 @@ namespace LitS3
             //     <DisplayName>webfile</DisplayName>
             // </Owner>
             reader.ReadStartElement("Owner");
-            identity.ID = reader.ReadElementContentAsString("ID", "");
-            identity.DisplayName = reader.ReadElementContentAsString("DisplayName", "");
+            this.ID = reader.ReadElementContentAsString("ID", "");
+            this.DisplayName = reader.ReadElementContentAsString("DisplayName", "");
             reader.ReadEndElement();
-
-            return identity;
         }
     }
 }

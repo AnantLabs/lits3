@@ -8,14 +8,10 @@ namespace LitS3
         public string Name { get; private set; }
         public DateTime CreationDate { get; private set; }
 
-        private Bucket() { }
-
-        public static Bucket FromXml(XmlReader reader)
+        internal Bucket(XmlReader reader)
         {
             if (reader.IsEmptyElement)
-                return null;
-
-            var bucket = new Bucket();
+                throw new Exception("Expected a non-empty <Bucket> element.");
 
             // Example:
             // <Bucket>
@@ -23,11 +19,14 @@ namespace LitS3
             //     <CreationDate>2006-02-03T16:45:09.000Z</CreationDate>
             // </Bucket>
             reader.ReadStartElement("Bucket");
-            bucket.Name = reader.ReadElementContentAsString("Name", "");
-            bucket.CreationDate = reader.ReadElementContentAsDateTime("CreationDate", "");
+            this.Name = reader.ReadElementContentAsString("Name", "");
+            this.CreationDate = reader.ReadElementContentAsDateTime("CreationDate", "");
             reader.ReadEndElement();
+        }
 
-            return bucket;
+        public override string ToString()
+        {
+            return string.Format("Bucket \"{0}\"", Name);
         }
     }
 }
