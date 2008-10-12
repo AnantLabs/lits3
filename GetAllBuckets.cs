@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 
-namespace LitS3.RestApi
+namespace LitS3
 {
+    /// <summary>
+    /// Gets all buckets owned by you.
+    /// </summary>
     public class GetAllBucketsRequest : S3Request<GetAllBucketsResponse>
     {
         public GetAllBucketsRequest(S3Service service)
@@ -12,7 +14,10 @@ namespace LitS3.RestApi
         }
     }
 
-    public class GetAllBucketsResponse : S3Response
+    /// <summary>
+    /// Contains the S3 response with all your owned buckets.
+    /// </summary>
+    public sealed class GetAllBucketsResponse : S3Response
     {
         public Identity Owner { get; private set; }
 

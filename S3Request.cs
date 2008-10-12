@@ -1,26 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace LitS3
 {
-    public class S3Request<TResponse>
+    /// <summary>
+    /// The base class for all S3 requests.
+    /// </summary>
+    public abstract class S3Request<TResponse>
         where TResponse : S3Response, new()
     {
-        const string AmazonHeaderPrefix = "x-amz-";
-        const string AmazonDateHeader = "x-amz-date";
-        const string MetadataPrefix = "x-amz-meta-";
-        const string BucketNameHeader = "x-bucket-name";
-
         string bucketName; // remember this for signing the request later
 
+        /// <summary>
+        /// Gets the service this request will operate against.
+        /// </summary>
         public S3Service Service { get; private set; }
+
         protected HttpWebRequest WebRequest { get; private set; }
 
-        public S3Request(S3Service service, string method, string bucketName, string objectKey,
+        internal S3Request(S3Service service, string method, string bucketName, string objectKey,
             string queryString)
         {
             this.Service = service;
@@ -55,17 +56,76 @@ namespace LitS3
 
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(uri);
             request.Method = method;
-            request.AllowWriteStreamBuffering = false;
+            request.AllowWriteStreamBuffering = true; // AddObject will make this false
             request.AllowAutoRedirect = true;
+            
             return request;
         }
 
-        public bool IsAuthorized
+        #region Expose S3-relevant mirrored properties of HttpWebRequest
+
+        /// <summary>
+        /// Gets a value that indicates whether a response has been received from S3.
+        /// </summary>
+        public bool HaveResponse
+        {
+            get { return WebRequest.HaveResponse; }
+        }
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether to make a persistent connection to S3.
+        /// </summary>
+        public bool KeepAlive
+        {
+            get { return WebRequest.KeepAlive; }
+            set { WebRequest.KeepAlive = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets proxy information for this request.
+        /// </summary>
+        public IWebProxy Proxy
+        {
+            get { return WebRequest.Proxy; }
+            set { WebRequest.Proxy = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets a time-out in milliseconds when writing to or reading from a stream.
+        /// The default value is 5 minutes.
+        /// </summary>
+        public int ReadWriteTimeout
+        {
+            get { return WebRequest.ReadWriteTimeout; }
+            set { WebRequest.ReadWriteTimeout = value; }
+        }
+
+        /// <summary>
+        /// Gets the service point to use for this request.
+        /// </summary>
+        public ServicePoint ServicePoint
+        {
+            get { return WebRequest.ServicePoint; }
+        }
+
+        /// <summary>
+        /// Gets or sets the time-out value in milliseconds for the GetResponse() and
+        /// GetResponseStream (if present) method. The default is 100 seconds.
+        /// </summary>
+        public int Timeout
+        {
+            get { return WebRequest.Timeout; }
+            set { WebRequest.Timeout = value; }
+        }
+
+        #endregion
+
+        protected bool IsAuthorized
         {
             get { return WebRequest.Headers[HttpRequestHeader.Authorization] != null; }
         }
 
-        void AuthorizeIfNecessary()
+        protected void AuthorizeIfNecessary()
         {
             if (!IsAuthorized) Authorize();
         }
@@ -79,12 +139,12 @@ namespace LitS3
         /// 
         /// Needs to be refactored into other classes for reuse in constructing public URLs for objects.
         /// </remarks>
-        public virtual void Authorize()
+        protected virtual void Authorize()
         {
             if (IsAuthorized)
                 throw new InvalidOperationException("This request has already been authorized.");
 
-            WebRequest.Headers[AmazonDateHeader] = DateTime.UtcNow.ToString("r");
+            WebRequest.Headers[S3Headers.AmazonDateHeader] = DateTime.UtcNow.ToString("r");
 
             var stringToSign = new StringBuilder()
                 .Append(WebRequest.Method).Append('\n')
@@ -95,7 +155,7 @@ namespace LitS3
             var amzHeaders = new SortedList<string, string[]>();
 
             foreach (string header in WebRequest.Headers)
-                if (header.StartsWith(AmazonHeaderPrefix))
+                if (header.StartsWith(S3Headers.AmazonHeaderPrefix))
                     amzHeaders.Add(header.ToLower(), WebRequest.Headers.GetValues(header));
 
             // append the sorted headers in amazon's defined CanonicalizedAmzHeaders format
@@ -127,7 +187,7 @@ namespace LitS3
             if (Service.UseSubdomains && bucketName != null)
             {
                 stringToSign.Append('/').Append(bucketName);
-                WebRequest.Headers.Remove(BucketNameHeader);
+                WebRequest.Headers.Remove(S3Headers.BucketNameHeader);
             }
 
             stringToSign.Append(WebRequest.RequestUri.AbsolutePath);
@@ -160,7 +220,7 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets the S3 REST response synchronously. It also calls Authorize() if necessary.
+        /// Gets the S3 REST response synchronously.
         /// </summary>
         public virtual TResponse GetResponse()
         {
@@ -178,35 +238,7 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Submits the request to the server and retrieves a Stream for writing body content to.
-        /// </summary>
-        public virtual Stream GetRequestStream()
-        {
-            AuthorizeIfNecessary();
-            return WebRequest.GetRequestStream();
-        }
-
-        /// <summary>
-        /// Gets the S3 REST request stream asynchronously. It also calls Authorize() if
-        /// necessary.
-        /// </summary>
-        public virtual IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
-        {
-            AuthorizeIfNecessary();
-            return WebRequest.BeginGetRequestStream(callback, state);
-        }
-
-        /// <summary>
-        /// Ends an asynchronous call to BeginGetRequestStream(). 
-        /// </summary>
-        public virtual Stream EndGetRequestStream(IAsyncResult asyncResult)
-        {
-            return WebRequest.EndGetRequestStream(asyncResult);
-        }
-
-        /// <summary>
-        /// Gets the S3 REST response asynchronously. It also calls Authorize() if
-        /// necessary.
+        /// Begins an asynchronous request to S3.
         /// </summary>
         public virtual IAsyncResult BeginGetResponse(AsyncCallback callback, object state)
         {
@@ -228,6 +260,14 @@ namespace LitS3
                 TryThrowS3Exception(exception);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Cancels an asynchronous request to S3.
+        /// </summary>
+        public void Abort()
+        {
+            WebRequest.Abort();
         }
     }
 }

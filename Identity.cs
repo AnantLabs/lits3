@@ -3,7 +3,10 @@ using System.Xml;
 
 namespace LitS3
 {
-    public class Identity
+    /// <summary>
+    /// Represents an Amazon S3 user.
+    /// </summary>
+    public sealed class Identity
     {
         public string ID { get; private set; }
         public string DisplayName { get; private set; }

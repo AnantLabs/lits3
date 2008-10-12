@@ -1,6 +1,9 @@
 ﻿
 namespace LitS3
 {
+    /// <summary>
+    /// Access Control Lists that are predefined by Amazon and supported when adding objects.
+    /// </summary>
     public enum CannedAcl
     {
         /// <summary>
@@ -24,25 +27,4 @@ namespace LitS3
         /// </summary>
         AuthenticatedRead
     }
-
-    // TODO: support these "complex" access control policies
-
-    /*public class AccessControlPolicy
-    {
-        /// <summary>
-        /// Creates 
-        /// </summary>
-        public AccessControlPolicy()
-        {
-
-        }
-
-        /// <summary>
-        /// Creates an AccessControlPolicy matching the given "Canned ACL".
-        /// </summary>
-        public AccessControlPolicy(CannedAcl acl)
-        {
-
-        }
-    }*/
 }

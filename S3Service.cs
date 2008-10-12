@@ -1,18 +1,55 @@
-﻿using System.Collections.Generic;
-using LitS3.RestApi;
+﻿using System;
+using System.Collections.Generic;
 
 namespace LitS3
 {
+    /// <summary>
+    /// Provides information about how to connect to an S3 server.
+    /// </summary>
     public class S3Service
     {
+        /// <summary>
+        /// Gets or sets the hostname of the s3 server, usually "s3.amazonaws.com" unless you
+        /// are using a 3rd party S3 implementation.
+        /// </summary>
         public string Host { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to connect to the server using SSL. The default is true.
+        /// </summary>
         public bool UseSsl { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to prepend the bucket name as a subdomain when accessing a bucket.
+        /// This defaults to true, and is Amazon's preferred method.
+        /// </summary>
         public bool UseSubdomains { get; set; }
+
+        /// <summary>
+        /// Gets or sets a custom port to use to connect to the S3 server. The default is zero, which
+        /// will let this class auto-select the port based on the UseSsl property.
+        /// </summary>
         public int CustomPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Amazon Access Key ID to use for authentication purposes.
+        /// </summary>
         public string AccessKeyID { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Amazon Secret Access Key to use for authentication purposes.
+        /// </summary>
         public string SecretAccessKey { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default delimiter to use when calling ListObjects(). The default is
+        /// a forward-slash "/".
+        /// </summary>
         public string DefaultDelimiter { get; set; }
 
+        /// <summary>
+        /// Creates a new S3Service with the default values.
+        /// </summary>
         public S3Service()
         {
             this.Host = "s3.amazonaws.com";
@@ -72,6 +109,9 @@ namespace LitS3
             }
         }
 
+        /// <summary>
+        /// Queries S3 to determine whether the given bucket resides in the Europe location.
+        /// </summary>
         public bool IsBucketInEurope(string bucketName)
         {
             var request = new GetBucketLocationRequest(this, bucketName);
@@ -80,25 +120,37 @@ namespace LitS3
                 return response.IsEurope;
         }
 
+        /// <summary>
+        /// Queries a bucket for a listing of objects it contains. Only objects with keys
+        /// beginning with the given prefix will be returned. The DefaultDelimiter will
+        /// be used. This method is for convenience and will throw an exception if the
+        /// response was truncated due to too many items.
+        /// </summary>
         public List<ListEntry> ListObjects(string bucketName, string prefix)
-        {
-            return ListObjects(bucketName, prefix, null);
-        }
-
-        public List<ListEntry> ListObjects(string bucketName, string prefix, string marker)
         {
             var args = new ListObjectsArgs { Prefix = prefix, Delimiter = DefaultDelimiter };
             var request = new ListObjectsRequest(this, bucketName, args);
 
             using (ListObjectsResponse response = request.GetResponse())
+            {
+                if (response.IsTruncated)
+                    throw new Exception("The server truncated the list of items requested. Consider using the ListObjectsRequest class to query for large numbers of items.");
+
                 return new List<ListEntry>(response.Entries);
+            }
         }
 
+        /// <summary>
+        /// Deletes the bucket with the given name.
+        /// </summary>
         public void DeleteBucket(string bucketName)
         {
             new DeleteBucketRequest(this, bucketName).GetResponse().Close();
         }
 
+        /// <summary>
+        /// Deletes the object in the specified bucket with the specified key.
+        /// </summary>
         public void DeleteObject(string bucketName, string key)
         {
             new DeleteObjectRequest(this, bucketName, key).GetResponse().Close();

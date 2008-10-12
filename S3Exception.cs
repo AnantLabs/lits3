@@ -4,18 +4,20 @@ using System.Xml;
 
 namespace LitS3
 {
-    public enum S3ErrorCode
+    /// <summary>
+    /// The exception that is thrown when the S3 server returns a specially formatted error object
+    /// that we can parse.
+    /// </summary>
+    public sealed class S3Exception : Exception
     {
-        Unknown,
-        AccessDenied,
-        NoSuchBucket,
-        NoSuchKey,
-        BucketNotEmpty
-    }
-
-    public class S3Exception : Exception
-    {
+        /// <summary>
+        /// Gets the error code returned by S3.
+        /// </summary>
         public S3ErrorCode ErrorCode { get; private set; }
+
+        /// <summary>
+        /// Gets the bucket name this error pertains to, if applicable.
+        /// </summary>
         public string BucketName { get; private set; }
 
         public S3Exception(S3ErrorCode errorCode, string bucketName, string message, WebException innerException)
@@ -25,7 +27,7 @@ namespace LitS3
             this.BucketName = bucketName;
         }
 
-        public static S3Exception FromWebException(WebException exception)
+        internal static S3Exception FromWebException(WebException exception)
         {
             HttpWebResponse response = (HttpWebResponse)exception.Response;
 
