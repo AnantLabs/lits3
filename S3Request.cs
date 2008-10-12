@@ -7,23 +7,28 @@ using System.IO;
 
 namespace LitS3
 {
-    public class S3Request
+    public class S3Request<TResponse>
+        where TResponse : S3Response, new()
     {
         const string AmazonHeaderPrefix = "x-amz-";
         const string AmazonDateHeader = "x-amz-date";
         const string MetadataPrefix = "x-amz-meta-";
         const string BucketNameHeader = "x-bucket-name";
 
+        string bucketName; // remember this for signing the request later
+
         public S3Service Service { get; private set; }
         public HttpWebRequest WebRequest { get; private set; }
 
-        public S3Request(S3Service service, string method, string bucketName, string objectKey)
+        public S3Request(S3Service service, string method, string bucketName, string objectKey,
+            string queryString)
         {
             this.Service = service;
-            this.WebRequest = CreateWebRequest(method, bucketName, objectKey);
+            this.bucketName = bucketName;
+            this.WebRequest = CreateWebRequest(method, objectKey, queryString);
         }
 
-        HttpWebRequest CreateWebRequest(string method, string bucketName, string objectKey)
+        HttpWebRequest CreateWebRequest(string method, string objectKey, string queryString)
         {
             var uriString = new StringBuilder(Service.UseSsl ? "https://" : "http://");
 
@@ -43,14 +48,15 @@ namespace LitS3
             // could be null
             uriString.Append(objectKey);
 
+            // could be null
+            uriString.Append(queryString);
+
             var uri = new Uri(uriString.ToString());
 
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(uri);
             request.Method = method;
             request.AllowWriteStreamBuffering = false;
             request.AllowAutoRedirect = false;
-            if (bucketName != null)
-                request.Headers[BucketNameHeader] = bucketName;
             return request;
         }
 
@@ -117,9 +123,7 @@ namespace LitS3
 
             // append the resource WebRequested using amazon's CanonicalizedResource format
 
-            // does this WebRequest address a bucket?
-            string bucketName = WebRequest.Headers[BucketNameHeader];
-
+            // does this request address a bucket?
             if (Service.UseSubdomains && bucketName != null)
             {
                 stringToSign.Append('/').Append(bucketName);
@@ -140,18 +144,16 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets the S3 REST response synchronously. This method is just a shortcut for the GetResponse()
-        /// method of our WebRequest property. It also calls Authorize() if necessary.
+        /// Gets the S3 REST response synchronously. It also calls Authorize() if necessary.
         /// </summary>
-        public HttpWebResponse GetResponse()
+        public TResponse GetResponse()
         {
             AuthorizeIfNecessary();
-            return (HttpWebResponse)WebRequest.GetResponse();
+            return new TResponse { WebResponse = (HttpWebResponse)WebRequest.GetResponse() };
         }
 
         /// <summary>
-        /// Gets the S3 REST request stream asynchronously. This method is just a shortcut for the
-        /// BeginGetRequestStream() method of our WebRequest property. It also calls Authorize() if
+        /// Gets the S3 REST request stream asynchronously. It also calls Authorize() if
         /// necessary.
         /// </summary>
         public IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
@@ -161,8 +163,7 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Ends an asynchronous call to BeginGetRequestStream(). This method is just a shortcut
-        /// for the EndGetRequestStream() method of our WebRequest property.
+        /// Ends an asynchronous call to BeginGetRequestStream(). 
         /// </summary>
         public Stream EndGetRequestStream(IAsyncResult asyncResult)
         {
@@ -170,8 +171,7 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets the S3 REST response asynchronously. This method is just a shortcut for the
-        /// BeginGetResponse() method of our WebRequest property. It also calls Authorize() if
+        /// Gets the S3 REST response asynchronously. It also calls Authorize() if
         /// necessary.
         /// </summary>
         public IAsyncResult BeginGetResponse(AsyncCallback callback, object state)
@@ -181,12 +181,11 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Ends an asynchronous call to BeginGetResponse(). This method is just a shortcut
-        /// for the EndGetResponse() method of our WebRequest property.
+        /// Ends an asynchronous call to BeginGetResponse().
         /// </summary>
-        public HttpWebResponse EndGetResponse(IAsyncResult asyncResult)
+        public TResponse EndGetResponse(IAsyncResult asyncResult)
         {
-            return (HttpWebResponse)WebRequest.EndGetResponse(asyncResult);
+            return new TResponse { WebResponse = (HttpWebResponse)WebRequest.EndGetResponse(asyncResult) };
         }
     }
 }

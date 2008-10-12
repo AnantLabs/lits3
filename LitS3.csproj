@@ -34,6 +34,7 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -48,10 +49,11 @@
     <Compile Include="BucketAccess.cs" />
     <Compile Include="BucketNameChecking.cs" />
     <Compile Include="Identity.cs" />
+    <Compile Include="ListEntries.cs" />
     <Compile Include="S3Request.cs" />
     <Compile Include="S3Response.cs" />
     <Compile Include="RestApi\GetAllBuckets.cs" />
-    <Compile Include="RestApi\ListBucket.cs" />
+    <Compile Include="RestApi\ListObjects.cs" />
     <Compile Include="S3Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
