@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Collections.Generic;
 using LitS3.RestApi;
-using System.IO;
-using System.Text;
 
 namespace LitS3
 {
@@ -101,30 +97,6 @@ namespace LitS3
         public void DeleteBucket(string bucketName)
         {
             new DeleteBucketRequest(this, bucketName).GetResponse().Close();
-        }
-
-        public void AddObject(string bucketName, string key, string objectData)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(objectData);
-
-            var request = new AddObjectRequest(this, bucketName, key);
-            request.WebRequest.ContentLength = bytes.Length;
-
-            using (Stream stream = request.GetRequestStream())
-            {
-                stream.Write(bytes, 0, bytes.Length);
-                stream.Flush();
-            }
-
-            request.GetResponse().Close();
-        }
-
-        public string GetObjectData(string bucketName, string key)
-        {
-            var request = new GetObjectRequest(this, bucketName, key, false);
-
-            using (GetObjectResponse response = request.GetResponse())
-                return new StreamReader(response.WebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
         }
 
         public void DeleteObject(string bucketName, string key)

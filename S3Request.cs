@@ -18,7 +18,7 @@ namespace LitS3
         string bucketName; // remember this for signing the request later
 
         public S3Service Service { get; private set; }
-        public HttpWebRequest WebRequest { get; private set; }
+        protected HttpWebRequest WebRequest { get; private set; }
 
         public S3Request(S3Service service, string method, string bucketName, string objectKey,
             string queryString)
@@ -79,7 +79,7 @@ namespace LitS3
         /// 
         /// Needs to be refactored into other classes for reuse in constructing public URLs for objects.
         /// </remarks>
-        public void Authorize()
+        public virtual void Authorize()
         {
             if (IsAuthorized)
                 throw new InvalidOperationException("This request has already been authorized.");
