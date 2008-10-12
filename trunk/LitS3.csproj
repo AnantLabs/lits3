@@ -47,9 +47,15 @@
   <ItemGroup>
     <Compile Include="Bucket.cs" />
     <Compile Include="BucketAccess.cs" />
-    <Compile Include="BucketNameChecking.cs" />
     <Compile Include="Identity.cs" />
     <Compile Include="ListEntries.cs" />
+    <Compile Include="MetadataCollection.cs" />
+    <Compile Include="RestApi\AddObject.cs" />
+    <Compile Include="RestApi\CreateBucket.cs" />
+    <Compile Include="RestApi\DeleteBucket.cs" />
+    <Compile Include="RestApi\GetBucketLocation.cs" />
+    <Compile Include="RestApi\GetObject.cs" />
+    <Compile Include="S3Exception.cs" />
     <Compile Include="S3Request.cs" />
     <Compile Include="S3Response.cs" />
     <Compile Include="RestApi\GetAllBuckets.cs" />
