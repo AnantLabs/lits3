@@ -45,11 +45,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AccessControl.cs" />
     <Compile Include="Bucket.cs" />
     <Compile Include="BucketAccess.cs" />
     <Compile Include="Identity.cs" />
     <Compile Include="ListEntries.cs" />
-    <Compile Include="MetadataCollection.cs" />
     <Compile Include="RestApi\AddObject.cs" />
     <Compile Include="RestApi\CreateBucket.cs" />
     <Compile Include="RestApi\DeleteBucket.cs" />

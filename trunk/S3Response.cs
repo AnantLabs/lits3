@@ -22,7 +22,7 @@ namespace LitS3
             get { return reader ?? (reader = CreateXmlReader()); }
         }
 
-        public HttpWebResponse WebResponse
+        protected internal HttpWebResponse WebResponse
         {
             get { return response; }
             internal set
@@ -55,13 +55,15 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Just a shortcut to close our WebResponse.
+        /// Closes our response stream. You must call this method when you are finished with
+        /// this response.
         /// </summary>
         public void Close()
         {
             WebResponse.Close();
         }
-
+        
+        // explicit implementation so you can use the "using" keyword
         void IDisposable.Dispose()
         {
             Close();
