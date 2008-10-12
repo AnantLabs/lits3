@@ -67,6 +67,11 @@ namespace LitS3.RestApi
             this.BucketName = Reader.ReadElementContentAsString("Name", "");
             this.Prefix = Reader.ReadElementContentAsString("Prefix", "");
             this.Marker = Reader.ReadElementContentAsString("Marker", "");
+
+            // this is optional
+            if (Reader.Name == "NextMarker")
+                this.NextMarker = Reader.ReadElementContentAsString("NextMarker", "");
+
             this.MaxKeys = Reader.ReadElementContentAsInt("MaxKeys", "");
 
             // this is optional
@@ -74,9 +79,6 @@ namespace LitS3.RestApi
                 this.Delimiter = Reader.ReadElementContentAsString("Delimiter", "");
             
             this.IsTruncated = Reader.ReadElementContentAsBoolean("IsTruncated", "");
-
-            if (Reader.Name == "NextMarker")
-                this.NextMarker = Reader.ReadElementContentAsString("NextMarker", "");
         }
 
         /// <summary>
@@ -90,7 +92,7 @@ namespace LitS3.RestApi
                 while (!Reader.IsEmptyElement && Reader.Name == "Contents")
                     yield return new S3Object(Reader);
 
-                if (Reader.Name == "CommonPrefixes" && Reader.Read())
+                while (Reader.Name == "CommonPrefixes" && Reader.Read())
                     while (Reader.Name == "Prefix")
                         yield return new CommonPrefix(Reader);
             }
