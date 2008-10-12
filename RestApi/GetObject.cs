@@ -7,8 +7,8 @@ namespace LitS3.RestApi
 {
     public class GetObjectRequest : S3Request<GetObjectResponse>
     {
-        public GetObjectRequest(S3Service service, string bucketName, string key)
-            : base(service, "GET", bucketName, key, null)
+        public GetObjectRequest(S3Service service, string bucketName, string key, bool metadataOnly)
+            : base(service, metadataOnly ? "HEAD" : "GET", bucketName, key, null)
         {
         }
     }

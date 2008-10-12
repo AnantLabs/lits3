@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Xml;
 
 namespace LitS3
@@ -10,7 +7,7 @@ namespace LitS3
     {
     }
 
-    public class S3Object : ListEntry
+    public class Contents : ListEntry
     {
         public string Key { get; private set; }
         public DateTime LastModified { get; private set; }
@@ -18,7 +15,7 @@ namespace LitS3
         public long Size { get; private set; }
         public Identity Owner { get; private set; }
 
-        internal S3Object(XmlReader reader)
+        internal Contents(XmlReader reader)
         {
             if (reader.IsEmptyElement)
                 throw new Exception("Expected a non-empty <Contents> element.");

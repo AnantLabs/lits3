@@ -121,10 +121,15 @@ namespace LitS3
 
         public string GetObjectData(string bucketName, string key)
         {
-            var request = new GetObjectRequest(this, bucketName, key);
+            var request = new GetObjectRequest(this, bucketName, key, false);
 
             using (GetObjectResponse response = request.GetResponse())
                 return new StreamReader(response.WebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
+        }
+
+        public void DeleteObject(string bucketName, string key)
+        {
+            new DeleteObjectRequest(this, bucketName, key).GetResponse().Close();
         }
     }
 }

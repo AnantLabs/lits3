@@ -9,6 +9,7 @@ namespace LitS3
         Unknown,
         AccessDenied,
         NoSuchBucket,
+        NoSuchKey,
         BucketNotEmpty
     }
 
