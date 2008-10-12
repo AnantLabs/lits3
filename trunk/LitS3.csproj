@@ -53,6 +53,7 @@
     <Compile Include="RestApi\AddObject.cs" />
     <Compile Include="RestApi\CreateBucket.cs" />
     <Compile Include="RestApi\DeleteBucket.cs" />
+    <Compile Include="RestApi\DeleteObject.cs" />
     <Compile Include="RestApi\GetBucketLocation.cs" />
     <Compile Include="RestApi\GetObject.cs" />
     <Compile Include="S3Exception.cs" />

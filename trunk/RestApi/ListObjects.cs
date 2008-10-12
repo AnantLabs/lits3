@@ -90,7 +90,7 @@ namespace LitS3.RestApi
             get
             {
                 while (!Reader.IsEmptyElement && Reader.Name == "Contents")
-                    yield return new S3Object(Reader);
+                    yield return new Contents(Reader);
 
                 while (Reader.Name == "CommonPrefixes" && Reader.Read())
                     while (Reader.Name == "Prefix")

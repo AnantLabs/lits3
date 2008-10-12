@@ -147,16 +147,16 @@ namespace LitS3
             WebRequest.Headers[HttpRequestHeader.Authorization] = authorization;
         }
 
-        Exception WrapExceptionIfPossible(WebException exception)
+        void TryThrowS3Exception(WebException exception)
         {
             // if this is a protocol error and the response type is XML, we can expect that
             // S3 sent us an <Error> message.
             if (exception.Status == WebExceptionStatus.ProtocolError &&
                 exception.Response.ContentType == "application/xml")
             {
-                return S3Exception.FromWebException(exception);
+                var wrapped = S3Exception.FromWebException(exception);
+                throw wrapped; // do this on a separate statement so the debugger can re-execute
             }
-            else return exception; // dont know what this is! maybe a timeout or something
         }
 
         /// <summary>
@@ -172,7 +172,8 @@ namespace LitS3
             }
             catch (WebException exception)
             {
-                throw WrapExceptionIfPossible(exception);
+                TryThrowS3Exception(exception);
+                throw;
             }
         }
 
@@ -224,7 +225,8 @@ namespace LitS3
             }
             catch (WebException exception)
             {
-                throw WrapExceptionIfPossible(exception);
+                TryThrowS3Exception(exception);
+                throw;
             }
         }
     }
