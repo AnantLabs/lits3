@@ -3,9 +3,19 @@ using System.Xml;
 
 namespace LitS3
 {
-    public class Bucket
+    /// <summary>
+    /// Represents a bucket hosted by Amazon S3 that contains objects.
+    /// </summary>
+    public sealed class Bucket
     {
+        /// <summary>
+        /// The name of this bucket.
+        /// </summary>
         public string Name { get; private set; }
+        
+        /// <summary>
+        /// The creation time of this bucket, as determined by S3.
+        /// </summary>
         public DateTime CreationDate { get; private set; }
 
         internal Bucket(XmlReader reader)

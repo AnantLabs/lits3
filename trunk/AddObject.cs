@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.IO;
 using System.Net;
 using System.Net.Cache;
 
-namespace LitS3.RestApi
+namespace LitS3
 {
     /// <summary>
     /// Uploads an object to S3.
     /// </summary>
     public class AddObjectRequest : S3Request<AddObjectResponse>
     {
-        const string CannedAclHeader = "x-amz-acl";
-
         // created on demand to save memory
         NameValueCollection metadata;
         bool contentLengthWasSet;
@@ -21,6 +20,7 @@ namespace LitS3.RestApi
         {
             this.CannedAcl = CannedAcl.Private;
             WebRequest.ServicePoint.Expect100Continue = true;
+            WebRequest.AllowWriteStreamBuffering = false; // important! we could be sending a LOT of data
         }
 
         /// <summary>
@@ -40,14 +40,17 @@ namespace LitS3.RestApi
         /// Gets a collection where you can store name/value metadata pairs to be stored along
         /// with this object. Since we are using the REST API, the names and values are limited
         /// to ASCII encoding. Additionally, Amazon imposes a 2k limit on the total HTTP header
-        /// size which includes metadata. Note that LitS3 manages adding and removing the special
-        /// "x-amz-meta" prefixes for you.
+        /// size which includes metadata. Note that LitS3 manages adding the special "x-amz-meta"
+        /// prefix for you.
         /// </summary>
         public NameValueCollection Metadata
         {
             get { return metadata ?? (metadata = new NameValueCollection()); }
         }
 
+        /// <summary>
+        /// Gets or sets the cache policy for this request.
+        /// </summary>
         public RequestCachePolicy CachePolicy
         {
             get { return WebRequest.CachePolicy; }
@@ -108,7 +111,7 @@ namespace LitS3.RestApi
             set { WebRequest.Headers[HttpRequestHeader.ContentEncoding] = value; }
         }
 
-        public override void Authorize()
+        protected override void Authorize()
         {
             // sanity check
             if (!contentLengthWasSet)
@@ -117,12 +120,12 @@ namespace LitS3.RestApi
             // write canned ACL, if it's not private (which is implied by default)
             switch (CannedAcl)
             {
-                case CannedAcl.PublicRead: 
-                    WebRequest.Headers[CannedAclHeader] = "public-read"; break;
+                case CannedAcl.PublicRead:
+                    WebRequest.Headers[S3Headers.CannedAclHeader] = "public-read"; break;
                 case CannedAcl.PublicReadWrite:
-                    WebRequest.Headers[CannedAclHeader] = "public-read-write"; break;
+                    WebRequest.Headers[S3Headers.CannedAclHeader] = "public-read-write"; break;
                 case CannedAcl.AuthenticatedRead:
-                    WebRequest.Headers[CannedAclHeader] = "authenticated-read"; break;
+                    WebRequest.Headers[S3Headers.CannedAclHeader] = "authenticated-read"; break;
             }
 
             if (Expires.HasValue)
@@ -131,14 +134,47 @@ namespace LitS3.RestApi
             if (metadata != null)
                 foreach (string key in metadata)
                     foreach (string value in metadata.GetValues(key))
-                        WebRequest.Headers.Add("x-amz-meta-" + key, value);
+                        WebRequest.Headers.Add(S3Headers.MetadataHeaderPrefix + key, value);
 
             base.Authorize();
         }
+
+        /// <summary>
+        /// Submits the request to the server and retrieves a Stream for writing object data to.
+        /// </summary>
+        public Stream GetRequestStream()
+        {
+            AuthorizeIfNecessary();
+            return WebRequest.GetRequestStream();
+        }
+
+        /// <summary>
+        /// Begins an asynchronous request for a Stream object to use to write object data.
+        /// </summary>
+        public IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
+        {
+            AuthorizeIfNecessary();
+            return WebRequest.BeginGetRequestStream(callback, state);
+        }
+
+        /// <summary>
+        /// Ends an asynchronous call to BeginGetRequestStream(). 
+        /// </summary>
+        public Stream EndGetRequestStream(IAsyncResult asyncResult)
+        {
+            return WebRequest.EndGetRequestStream(asyncResult);
+        }
     }
 
-    public class AddObjectResponse : S3Response
+    /// <summary>
+    /// Represents the response returned by S3 after adding an object with AddObjectRequest.
+    /// </summary>
+    public sealed class AddObjectResponse : S3Response
     {
+        /// <summary>
+        /// Gets the added object's ETag as calculated by S3. You can compare this to an ETag you
+        /// calculate locally to verify that S3 received the file correctly.
+        /// </summary>
         public string ETag { get; private set; }
 
         protected override void ProcessResponse()

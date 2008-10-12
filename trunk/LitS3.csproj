@@ -46,21 +46,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessControl.cs" />
+    <Compile Include="AddObject.cs" />
     <Compile Include="Bucket.cs" />
     <Compile Include="BucketAccess.cs" />
+    <Compile Include="CreateBucket.cs" />
+    <Compile Include="DeleteBucket.cs" />
+    <Compile Include="DeleteObject.cs" />
+    <Compile Include="GetAllBuckets.cs" />
+    <Compile Include="GetBucketLocation.cs" />
+    <Compile Include="GetObject.cs" />
     <Compile Include="Identity.cs" />
     <Compile Include="ListEntries.cs" />
-    <Compile Include="RestApi\AddObject.cs" />
-    <Compile Include="RestApi\CreateBucket.cs" />
-    <Compile Include="RestApi\DeleteBucket.cs" />
-    <Compile Include="RestApi\DeleteObject.cs" />
-    <Compile Include="RestApi\GetBucketLocation.cs" />
-    <Compile Include="RestApi\GetObject.cs" />
+    <Compile Include="ListObjects.cs" />
+    <Compile Include="S3ErrorCode.cs" />
+    <Compile Include="S3Headers.cs" />
     <Compile Include="S3Exception.cs" />
     <Compile Include="S3Request.cs" />
     <Compile Include="S3Response.cs" />
-    <Compile Include="RestApi\GetAllBuckets.cs" />
-    <Compile Include="RestApi\ListObjects.cs" />
     <Compile Include="S3Service.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

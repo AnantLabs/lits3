@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Net;
 
-namespace LitS3.RestApi
+namespace LitS3
 {
+    /// <summary>
+    /// Deletes a bucket from S3. The bucket must be empty.
+    /// </summary>
     public class DeleteBucketRequest : S3Request<DeleteBucketResponse>
     {
         public DeleteBucketRequest(S3Service service, string bucketName)
@@ -11,7 +14,10 @@ namespace LitS3.RestApi
         }
     }
 
-    public class DeleteBucketResponse : S3Response
+    /// <summary>
+    /// Represents an S3 response for a deleted bucket.
+    /// </summary>
+    public sealed class DeleteBucketResponse : S3Response
     {
         protected override void ProcessResponse()
         {

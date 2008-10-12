@@ -33,6 +33,8 @@ namespace LitS3
             }
         }
 
+        internal S3Response() { }
+
         protected virtual void ProcessResponse() { }
 
         static void CheckResponse(HttpWebResponse response)
