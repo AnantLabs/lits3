@@ -4,10 +4,10 @@ using System.Net;
 
 namespace LitS3.RestApi
 {
-    public class GetAllBucketsRequest : S3Request
+    public class GetAllBucketsRequest : S3Request<GetAllBucketsResponse>
     {
         public GetAllBucketsRequest(S3Service service)
-            : base(service, "GET", null, null)
+            : base(service, "GET", null, null, null)
         {
         }
     }
@@ -16,12 +16,12 @@ namespace LitS3.RestApi
     {
         public Identity Owner { get; private set; }
 
-        public GetAllBucketsResponse(HttpWebResponse response)
-            : base(response)
+        protected override void ProcessResponse()
         {
             // See http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTServiceGET.html
 
             // read everything up to the list of buckets
+
             Reader.ReadStartElement("ListAllMyBucketsResult");
 
             if (Reader.Name == "Owner")

@@ -28,8 +28,8 @@ namespace LitS3
         /// </summary>
         public List<Bucket> GetAllBuckets()
         {
-            using (HttpWebResponse response = new GetAllBucketsRequest(this).GetResponse())
-                return new List<Bucket>(new GetAllBucketsResponse(response).Buckets);
+            using (GetAllBucketsResponse response = new GetAllBucketsRequest(this).GetResponse())
+                return new List<Bucket>(response.Buckets);
         }
 
         /// <summary>
@@ -52,7 +52,11 @@ namespace LitS3
 
         public void ListBucketContents(string bucketName, string prefix)
         {
-            throw new NotImplementedException();
+            var args = new ListObjectsArgs { Prefix = prefix };
+            var request = new ListObjectsRequest(this, bucketName, args);
+
+            //using (HttpWebResponse response = request.GetResponse())
+                
         }
 
         public void ListBucketContents(string bucketName, string prefix, string marker)

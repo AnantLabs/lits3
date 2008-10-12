@@ -10,9 +10,8 @@ namespace LitS3
     /// </summary>
     public abstract class S3Response : IDisposable
     {
+        HttpWebResponse response;
         XmlReader reader;
-
-        public HttpWebResponse WebResponse { get; private set; }
 
         /// <summary>
         /// Gets an XmlReader for parsing Amazon XML responses, creating one if necessary and
@@ -23,11 +22,18 @@ namespace LitS3
             get { return reader ?? (reader = CreateXmlReader()); }
         }
 
-        protected S3Response(HttpWebResponse response)
+        public HttpWebResponse WebResponse
         {
-            CheckResponse(response);
-            this.WebResponse = response;
+            get { return response; }
+            internal set
+            {
+                CheckResponse(value);
+                this.response = value;
+                ProcessResponse();
+            }
         }
+
+        protected virtual void ProcessResponse() { }
 
         static void CheckResponse(HttpWebResponse response)
         {
