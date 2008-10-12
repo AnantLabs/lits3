@@ -50,18 +50,18 @@ namespace LitS3
             throw new NotImplementedException();
         }
 
-        public void ListBucketContents(string bucketName, string prefix)
+        public List<ListEntry> ListObjects(string bucketName, string prefix)
         {
-            var args = new ListObjectsArgs { Prefix = prefix };
-            var request = new ListObjectsRequest(this, bucketName, args);
-
-            //using (HttpWebResponse response = request.GetResponse())
-                
+            return ListObjects(bucketName, prefix, null);
         }
 
-        public void ListBucketContents(string bucketName, string prefix, string marker)
+        public List<ListEntry> ListObjects(string bucketName, string prefix, string marker)
         {
-            throw new NotImplementedException();
+            var args = new ListObjectsArgs { Prefix = prefix, Delimiter = DefaultDelimiter };
+            var request = new ListObjectsRequest(this, bucketName, args);
+
+            using (ListObjectsResponse response = request.GetResponse())
+                return new List<ListEntry>(response.Entries);
         }
     }
 }
