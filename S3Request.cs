@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.IO;
 
 namespace LitS3
 {
@@ -56,7 +56,7 @@ namespace LitS3
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(uri);
             request.Method = method;
             request.AllowWriteStreamBuffering = false;
-            request.AllowAutoRedirect = false;
+            request.AllowAutoRedirect = true;
             return request;
         }
 
@@ -132,7 +132,11 @@ namespace LitS3
 
             stringToSign.Append(WebRequest.RequestUri.AbsolutePath);
 
-            // todo: add sub-resource, if present. "?acl", "?location", "?logging", or "?torrent"
+            // add sub-resource, if present. "?acl", "?location", "?logging", or "?torrent"
+            string query = WebRequest.RequestUri.Query;
+
+            if (query == "?acl" || query == "?location" || query == "?logging" || query == "?torrent")
+                stringToSign.Append(query);
 
             // encode
             var signer = new HMACSHA1(Encoding.UTF8.GetBytes(Service.SecretAccessKey));
@@ -143,20 +147,49 @@ namespace LitS3
             WebRequest.Headers[HttpRequestHeader.Authorization] = authorization;
         }
 
+        Exception WrapExceptionIfPossible(WebException exception)
+        {
+            // if this is a protocol error and the response type is XML, we can expect that
+            // S3 sent us an <Error> message.
+            if (exception.Status == WebExceptionStatus.ProtocolError &&
+                exception.Response.ContentType == "application/xml")
+            {
+                return S3Exception.FromWebException(exception);
+            }
+            else return exception; // dont know what this is! maybe a timeout or something
+        }
+
         /// <summary>
         /// Gets the S3 REST response synchronously. It also calls Authorize() if necessary.
         /// </summary>
-        public TResponse GetResponse()
+        public virtual TResponse GetResponse()
         {
             AuthorizeIfNecessary();
-            return new TResponse { WebResponse = (HttpWebResponse)WebRequest.GetResponse() };
+
+            try
+            {
+                return new TResponse { WebResponse = (HttpWebResponse)WebRequest.GetResponse() };
+            }
+            catch (WebException exception)
+            {
+                throw WrapExceptionIfPossible(exception);
+            }
+        }
+
+        /// <summary>
+        /// Submits the request to the server and retrieves a Stream for writing body content to.
+        /// </summary>
+        public virtual Stream GetRequestStream()
+        {
+            AuthorizeIfNecessary();
+            return WebRequest.GetRequestStream();
         }
 
         /// <summary>
         /// Gets the S3 REST request stream asynchronously. It also calls Authorize() if
         /// necessary.
         /// </summary>
-        public IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
+        public virtual IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)
         {
             AuthorizeIfNecessary();
             return WebRequest.BeginGetRequestStream(callback, state);
@@ -165,7 +198,7 @@ namespace LitS3
         /// <summary>
         /// Ends an asynchronous call to BeginGetRequestStream(). 
         /// </summary>
-        public Stream EndGetRequestStream(IAsyncResult asyncResult)
+        public virtual Stream EndGetRequestStream(IAsyncResult asyncResult)
         {
             return WebRequest.EndGetRequestStream(asyncResult);
         }
@@ -174,7 +207,7 @@ namespace LitS3
         /// Gets the S3 REST response asynchronously. It also calls Authorize() if
         /// necessary.
         /// </summary>
-        public IAsyncResult BeginGetResponse(AsyncCallback callback, object state)
+        public virtual IAsyncResult BeginGetResponse(AsyncCallback callback, object state)
         {
             AuthorizeIfNecessary();
             return WebRequest.BeginGetResponse(callback, state);
@@ -183,9 +216,16 @@ namespace LitS3
         /// <summary>
         /// Ends an asynchronous call to BeginGetResponse().
         /// </summary>
-        public TResponse EndGetResponse(IAsyncResult asyncResult)
+        public virtual TResponse EndGetResponse(IAsyncResult asyncResult)
         {
-            return new TResponse { WebResponse = (HttpWebResponse)WebRequest.EndGetResponse(asyncResult) };
+            try
+            {
+                return new TResponse { WebResponse = (HttpWebResponse)WebRequest.EndGetResponse(asyncResult) };
+            }
+            catch (WebException exception)
+            {
+                throw WrapExceptionIfPossible(exception);
+            }
         }
     }
 }

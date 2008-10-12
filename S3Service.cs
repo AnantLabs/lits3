@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Net;
 using LitS3.RestApi;
+using System.IO;
+using System.Text;
 
 namespace LitS3
 {
@@ -39,15 +41,47 @@ namespace LitS3
         /// the BucketNameChecking.Strict requirements.</param>
         public void CreateBucket(string bucketName)
         {
-            throw new NotImplementedException();
+            new CreateBucketRequest(this, bucketName, false).GetResponse().Close();
+        }
+
+        /// <summary>
+        /// Creates a bucket in the Amazon Europe storage location.
+        /// </summary>
+        public void CreateBucketInEurope(string bucketName)
+        {
+            new CreateBucketRequest(this, bucketName, true).GetResponse().Close();
         }
 
         /// <summary>
         /// Queries S3 about the existance and ownership of the given bucket name.
         /// </summary>
-        public BucketAccess FindBucket(string bucketName)
+        public BucketAccess QueryBucket(string bucketName)
         {
-            throw new NotImplementedException();
+            try
+            {
+                // recommended technique from amazon: try and list contents of the bucket with 0 maxkeys
+                var args = new ListObjectsArgs { MaxKeys = 0 };
+                new ListObjectsRequest(this, bucketName, args).GetResponse().Close();
+
+                return BucketAccess.Accessible;
+            }
+            catch (S3Exception exception)
+            {
+                switch (exception.ErrorCode)
+                {
+                    case S3ErrorCode.NoSuchBucket: return BucketAccess.NoSuchBucket;
+                    case S3ErrorCode.AccessDenied: return BucketAccess.NotAccessible;
+                    default: throw;
+                }
+            }
+        }
+
+        public bool IsBucketInEurope(string bucketName)
+        {
+            var request = new GetBucketLocationRequest(this, bucketName);
+
+            using (GetBucketLocationResponse response = request.GetResponse())
+                return response.IsEurope;
         }
 
         public List<ListEntry> ListObjects(string bucketName, string prefix)
@@ -62,6 +96,35 @@ namespace LitS3
 
             using (ListObjectsResponse response = request.GetResponse())
                 return new List<ListEntry>(response.Entries);
+        }
+
+        public void DeleteBucket(string bucketName)
+        {
+            new DeleteBucketRequest(this, bucketName).GetResponse().Close();
+        }
+
+        public void AddObject(string bucketName, string key, string objectData)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(objectData);
+
+            var request = new AddObjectRequest(this, bucketName, key);
+            request.WebRequest.ContentLength = bytes.Length;
+
+            using (Stream stream = request.GetRequestStream())
+            {
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Flush();
+            }
+
+            request.GetResponse().Close();
+        }
+
+        public string GetObjectData(string bucketName, string key)
+        {
+            var request = new GetObjectRequest(this, bucketName, key);
+
+            using (GetObjectResponse response = request.GetResponse())
+                return new StreamReader(response.WebResponse.GetResponseStream(), Encoding.UTF8).ReadToEnd();
         }
     }
 }
