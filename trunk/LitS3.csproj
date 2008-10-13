@@ -58,6 +58,7 @@
     <Compile Include="Identity.cs" />
     <Compile Include="ListEntries.cs" />
     <Compile Include="ListObjects.cs" />
+    <Compile Include="S3Authorizer.cs" />
     <Compile Include="S3ErrorCode.cs" />
     <Compile Include="S3Headers.cs" />
     <Compile Include="S3Exception.cs" />
