@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace LitS3
 {
@@ -155,5 +156,124 @@ namespace LitS3
         {
             new DeleteObjectRequest(this, bucketName, key).GetResponse().Close();
         }
+
+        #region AddObject and overloads
+
+        /// <summary>
+        /// Adds an object to S3 by reading all the data in the given stream. The stream must support
+        /// the Length property.
+        /// </summary>
+        public void AddObject(Stream inputStream, string bucketName, string key, 
+            string contentType, CannedAcl acl)
+        {
+            var request = new AddObjectRequest(this, bucketName, key);
+            request.ContentLength = inputStream.Length;
+
+            if (contentType != null) // if specified
+                request.ContentType = contentType;
+
+            if (acl != default(CannedAcl))
+                request.CannedAcl = acl;
+
+            using (Stream requestStream = request.GetRequestStream())
+                CopyStream(inputStream, requestStream, inputStream.Length);
+
+            request.GetResponse().Close();
+        }
+
+        /// <summary>
+        /// Adds an object to S3 by reading all the data in the given stream. The stream must support
+        /// the Length property.
+        /// </summary>
+        public void AddObject(Stream inputStream, string bucketName, string key)
+        {
+            AddObject(inputStream, bucketName, key, null, default(CannedAcl));
+        }
+
+        /// <summary>
+        /// Uploads the contents of an existing local file to S3.
+        /// </summary>
+        public void AddObject(string inputFile, string bucketName, string key,
+            string contentType, CannedAcl acl)
+        {
+            using (Stream inputStream = File.OpenRead(inputFile))
+                AddObject(inputStream, bucketName, key, contentType, acl);
+        }
+
+        /// <summary>
+        /// Uploads the contents of an existing local file to S3.
+        /// </summary>
+        public void AddObject(string inputFile, string bucketName, string key)
+        {
+            AddObject(inputFile, bucketName, key, null, default(CannedAcl));
+        }
+
+        #endregion
+
+        #region GetObject and overloads
+
+        /// <summary>
+        /// Gets an existing object in S3 and copies its data to the given Stream.
+        /// </summary>
+        public void GetObject(string bucketName, string key, Stream outputStream, out string contentType)
+        {
+            var request = new GetObjectRequest(this, bucketName, key);
+
+            using (GetObjectResponse response = request.GetResponse())
+            {
+                contentType = response.ContentType;
+                CopyStream(response.GetResponseStream(), outputStream, response.ContentLength);
+            }
+        }
+
+        /// <summary>
+        /// Gets an existing object in S3 and copies its data to the given Stream.
+        /// </summary>
+        public void GetObject(string bucketName, string key, Stream outputStream)
+        {
+            string contentType;
+            GetObject(bucketName, key, outputStream, out contentType);
+        }
+
+        /// <summary>
+        /// Downloads an existing object in S3 to the given local file path.
+        /// </summary>
+        public void GetObject(string bucketName, string key, string outputFile, out string contentType)
+        {
+            using (Stream outputStream = File.Create(outputFile))
+                GetObject(bucketName, key, outputStream, out contentType);
+        }
+
+        /// <summary>
+        /// Downloads an existing object in S3 to the given local file path.
+        /// </summary>
+        public void GetObject(string bucketName, string key, string outputFile)
+        {
+            string contentType;
+            GetObject(bucketName, key, outputFile, out contentType);
+        }
+
+        #endregion
+
+        #region CopyStream
+
+        void CopyStream(Stream source, Stream dest, long length)
+        {
+            var buffer = new byte[8192];
+
+            while (length > 0) // reuse this local var
+            {
+                int bytesRead = source.Read(buffer, 0, buffer.Length);
+
+                if (bytesRead > 0)
+                    dest.Write(buffer, 0, bytesRead);
+                else
+                    throw new Exception("Unexpected end of stream while copying.");
+
+                length -= bytesRead;
+            }
+        }
+
+        #endregion
     }
 }
