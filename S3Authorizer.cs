@@ -70,7 +70,7 @@ namespace LitS3
 
             // construct CanonicalizedResource, always /bucket/key
             stringToSign.Append('/').Append(bucketName);
-            stringToSign.Append('/').Append(Uri.EscapeUriString(key));
+            stringToSign.Append('/').Append(Uri.EscapeDataString(key));
 
             return Sign(stringToSign.ToString());
         }
