@@ -296,6 +296,26 @@ namespace LitS3
             AddObject(inputFile, bucketName, key, null, default(CannedAcl));
         }
 
+        /// <summary>
+        /// Uploads the contents of a string to S3. This method is only appropriate for
+        /// small objects and testing. The UTF-8 encoding will be used.
+        /// </summary>
+        public void AddObjectString(string contents, string bucketName, string key,
+            string contentType, CannedAcl acl)
+        {
+            using (var inputStream = new MemoryStream(Encoding.UTF8.GetBytes(contents)))
+                AddObject(inputStream, bucketName, key, contentType, acl);
+        }
+
+        /// <summary>
+        /// Uploads the contents of a string to S3. This method is only appropriate for
+        /// small objects and testing. The UTF-8 encoding will be used.
+        /// </summary>
+        public void AddObjectString(string contents, string bucketName, string key)
+        {
+            AddObjectString(contents, bucketName, key, null, default(CannedAcl));
+        }
+
         #endregion
 
         #region GetObject and overloads
@@ -339,6 +359,29 @@ namespace LitS3
         {
             string contentType;
             GetObject(bucketName, key, outputFile, out contentType);
+        }
+
+        /// <summary>
+        /// Downloads an existing object in S3 and loads the entire contents into a string.
+        /// This is only appropriate for very small objects and for testing.
+        /// </summary>
+        public string GetObjectString(string bucketName, string key, out string contentType)
+        {
+            using (var outputStream = new MemoryStream())
+            {
+                GetObject(bucketName, key, outputStream, out contentType);
+                return Encoding.UTF8.GetString(outputStream.GetBuffer(), 0, (int)outputStream.Length);
+            }
+        }
+
+        /// <summary>
+        /// Downloads an existing object in S3 and loads the entire contents into a string.
+        /// This is only appropriate for very small objects and for testing.
+        /// </summary>
+        public string GetObjectString(string bucketName, string key)
+        {
+            string contentType;
+            return GetObjectString(bucketName, key, out contentType);
         }
 
         #endregion
