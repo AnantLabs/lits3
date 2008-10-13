@@ -5,7 +5,6 @@ namespace LitS3
     {
         public const string AmazonHeaderPrefix = "x-amz-";
         public const string AmazonDateHeader = "x-amz-date";
-        public const string BucketNameHeader = "x-bucket-name";
         public const string CannedAclHeader = "x-amz-acl";
         public const string MetadataHeaderPrefix = "x-amz-meta-";
 

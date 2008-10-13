@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace LitS3
 {
     /// <summary>
-    /// Provides information about how to connect to an S3 server.
+    /// Describes how to connect to a particular S3 server.
     /// </summary>
     public class S3Service
     {
+        string secretAccessKey;
+        S3Authorizer authorizer;
+
+        internal S3Authorizer Authorizer { get { return authorizer; } }
+
         /// <summary>
         /// Gets or sets the hostname of the s3 server, usually "s3.amazonaws.com" unless you
         /// are using a 3rd party S3 implementation.
@@ -40,7 +46,15 @@ namespace LitS3
         /// <summary>
         /// Gets or sets the Amazon Secret Access Key to use for authentication purposes.
         /// </summary>
-        public string SecretAccessKey { get; set; }
+        public string SecretAccessKey
+        {
+            get { return secretAccessKey; }
+            set
+            {
+                secretAccessKey = value;
+                authorizer = new S3Authorizer(this);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default delimiter to use when calling ListObjects(). The default is
@@ -58,6 +72,8 @@ namespace LitS3
             this.UseSubdomains = true;
             this.DefaultDelimiter = "/";
         }
+
+        #region Basic Operations
 
         /// <summary>
         /// Lists all buckets owned by you.
@@ -157,13 +173,74 @@ namespace LitS3
             new DeleteObjectRequest(this, bucketName, key).GetResponse().Close();
         }
 
+        #endregion
+
+        #region Public Uri construction
+
+        /// <summary>
+        /// This constructs a Uri suitable for accessing the given object in the given bucket.
+        /// It is not authorized, so it will only work for objects with anonymous read access.
+        /// This method itself does not communicate with S3 and will return immediately.
+        /// </summary>
+        public string GetUrl(string bucketName, string key)
+        {
+            var uriString = new StringBuilder();
+            uriString.Append("http://");
+
+            if (UseSubdomains)
+                uriString.Append(bucketName).Append('.');
+
+            uriString.Append(Host);
+
+            if (CustomPort != 0)
+                uriString.Append(':').Append(CustomPort);
+
+            uriString.Append('/');
+
+            if (!UseSubdomains)
+                uriString.Append(bucketName).Append('/');
+
+            uriString.Append(Uri.EscapeUriString(key));
+
+            return uriString.ToString();
+        }
+
+        /// <summary>
+        /// Creates a pre-authorized URI valid for performing a GET on the given S3 object
+        /// in the given bucket. This is useful for constructing a URL to hand over to a 3rd party
+        /// (such as a web browser). The Uri will automatically expire after the time given.
+        /// This method itself does not communicate with S3 and will return immediately.
+        /// </summary>
+        /// <remarks>
+        /// You might expect this method to return a System.Uri instead of a string. It turns out
+        /// there is a tricky issue with constructing Uri objects from these pre-authenticated
+        /// url strings: Amazon S3 can't handle querystring signatures with the "+" character.
+        /// But the Uri.ToString() method will unescape even a properly encoded "+" back into a raw "+",
+        /// which will cause S3 to choke on the url if you were to take the Uri.ToString() and feed
+        /// it to a browser. So instead, we'll give you a properly escaped URL string which 
+        /// will always work in a browser. If you want to, say, use it in a WebRequest instead, 
+        /// it turns out that WebRequest will leave it escaped properly and everything will work.
+        /// </remarks>
+        public string GetAuthorizedUrl(string bucketName, string key, DateTime expires)
+        {
+            string authorization = authorizer.AuthorizeQueryString(bucketName, key, expires);
+            
+            var uriString = new StringBuilder(GetUrl(bucketName, key))
+                .Append("?AWSAccessKeyId=").Append(AccessKeyID)
+                .Append("&Expires=").Append(expires.SecondsSinceEpoch())
+                .Append("&Signature=").Append(Uri.EscapeDataString(authorization));
+
+            return uriString.ToString();
+        }
+
+        #endregion
+
         #region AddObject and overloads
 
         /// <summary>
-        /// Adds an object to S3 by reading all the data in the given stream. The stream must support
-        /// the Length property.
+        /// Adds an object to S3 by reading the specified amount of data from the given stream.
         /// </summary>
-        public void AddObject(Stream inputStream, string bucketName, string key, 
+        public void AddObject(Stream inputStream, long bytes, string bucketName, string key, 
             string contentType, CannedAcl acl)
         {
             var request = new AddObjectRequest(this, bucketName, key);
@@ -176,7 +253,7 @@ namespace LitS3
                 request.CannedAcl = acl;
 
             using (Stream requestStream = request.GetRequestStream())
-                CopyStream(inputStream, requestStream, inputStream.Length);
+                CopyStream(inputStream, requestStream, bytes);
 
             request.GetResponse().Close();
         }
@@ -185,9 +262,19 @@ namespace LitS3
         /// Adds an object to S3 by reading all the data in the given stream. The stream must support
         /// the Length property.
         /// </summary>
+        public void AddObject(Stream inputStream, string bucketName, string key,
+            string contentType, CannedAcl acl)
+        {
+            AddObject(inputStream, inputStream.Length, bucketName, key, contentType, acl);
+        }
+
+        /// <summary>
+        /// Adds an object to S3 by reading all the data in the given stream. The stream must support
+        /// the Length property.
+        /// </summary>
         public void AddObject(Stream inputStream, string bucketName, string key)
         {
-            AddObject(inputStream, bucketName, key, null, default(CannedAcl));
+            AddObject(inputStream, inputStream.Length, bucketName, key, null, default(CannedAcl));
         }
 
         /// <summary>
@@ -197,7 +284,7 @@ namespace LitS3
             string contentType, CannedAcl acl)
         {
             using (Stream inputStream = File.OpenRead(inputFile))
-                AddObject(inputStream, bucketName, key, contentType, acl);
+                AddObject(inputStream, inputStream.Length, bucketName, key, contentType, acl);
         }
 
         /// <summary>

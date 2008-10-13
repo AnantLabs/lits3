@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace LitS3
@@ -47,7 +45,7 @@ namespace LitS3
                 uriString.Append(bucketName).Append('/');
 
             // could be null
-            uriString.Append(objectKey);
+            uriString.Append(Uri.EscapeUriString(objectKey));
 
             // could be null
             uriString.Append(queryString);
@@ -119,91 +117,17 @@ namespace LitS3
 
         #endregion
 
-        protected bool IsAuthorized
-        {
-            get { return WebRequest.Headers[HttpRequestHeader.Authorization] != null; }
-        }
-
         protected void AuthorizeIfNecessary()
         {
-            if (!IsAuthorized) Authorize();
+            if (!S3Authorizer.IsAuthorized(WebRequest)) Authorize();
         }
 
-        /// <summary>
-        /// Signs the given HttpWebRequest using the HTTP Authorization header with a value
-        /// generated using the contents of the request plus our SecretAccessKey.
-        /// </summary>
-        /// <remarks>
-        /// See http://docs.amazonwebservices.com/AmazonS3/2006-03-01/RESTAuthentication.html
-        /// 
-        /// Needs to be refactored into other classes for reuse in constructing public URLs for objects.
-        /// </remarks>
         protected virtual void Authorize()
         {
-            if (IsAuthorized)
+            if (S3Authorizer.IsAuthorized(WebRequest))
                 throw new InvalidOperationException("This request has already been authorized.");
 
-            WebRequest.Headers[S3Headers.AmazonDateHeader] = DateTime.UtcNow.ToString("r");
-
-            var stringToSign = new StringBuilder()
-                .Append(WebRequest.Method).Append('\n')
-                .Append(WebRequest.Headers[HttpRequestHeader.ContentMd5]).Append('\n')
-                .Append(WebRequest.ContentType).Append('\n')
-                .Append('\n'); // ignore the official Date header since WebRequest won't send it
-
-            var amzHeaders = new SortedList<string, string[]>();
-
-            foreach (string header in WebRequest.Headers)
-                if (header.StartsWith(S3Headers.AmazonHeaderPrefix))
-                    amzHeaders.Add(header.ToLower(), WebRequest.Headers.GetValues(header));
-
-            // append the sorted headers in amazon's defined CanonicalizedAmzHeaders format
-            foreach (var amzHeader in amzHeaders)
-            {
-                stringToSign.Append(amzHeader.Key).Append(':');
-
-                // ensure that there's no space around the colon
-                bool lastCharWasWhitespace = true;
-
-                foreach (char c in string.Join(",", amzHeader.Value))
-                {
-                    bool isWhitespace = char.IsWhiteSpace(c);
-
-                    if (isWhitespace && !lastCharWasWhitespace)
-                        stringToSign.Append(' '); // amazon wants whitespace "folded" to a single space
-                    else if (!isWhitespace)
-                        stringToSign.Append(c);
-
-                    lastCharWasWhitespace = isWhitespace;
-                }
-
-                stringToSign.Append('\n');
-            }
-
-            // append the resource WebRequested using amazon's CanonicalizedResource format
-
-            // does this request address a bucket?
-            if (Service.UseSubdomains && bucketName != null)
-            {
-                stringToSign.Append('/').Append(bucketName);
-                WebRequest.Headers.Remove(S3Headers.BucketNameHeader);
-            }
-
-            stringToSign.Append(WebRequest.RequestUri.AbsolutePath);
-
-            // add sub-resource, if present. "?acl", "?location", "?logging", or "?torrent"
-            string query = WebRequest.RequestUri.Query;
-
-            if (query == "?acl" || query == "?location" || query == "?logging" || query == "?torrent")
-                stringToSign.Append(query);
-
-            // encode
-            var signer = new HMACSHA1(Encoding.UTF8.GetBytes(Service.SecretAccessKey));
-            var signed = Convert.ToBase64String(signer.ComputeHash(Encoding.UTF8.GetBytes(stringToSign.ToString())));
-
-            string authorization = string.Format("AWS {0}:{1}", Service.AccessKeyID, signed);
-
-            WebRequest.Headers[HttpRequestHeader.Authorization] = authorization;
+            Service.Authorizer.AuthorizeRequest(WebRequest, bucketName);
         }
 
         void TryThrowS3Exception(WebException exception)
