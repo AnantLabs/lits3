@@ -44,11 +44,13 @@ namespace LitS3
             if (bucketName != null && !Service.UseSubdomains)
                 uriString.Append(bucketName).Append('/');
 
-            // could be null
-            uriString.Append(Uri.EscapeUriString(objectKey));
+            // EscapeDataString allows you to use basically any key for an object, including
+            // keys with tricky URI characters like "+".
+            if (objectKey != null)
+                uriString.Append(Uri.EscapeDataString(objectKey));
 
-            // could be null
-            uriString.Append(queryString);
+            if (queryString != null)
+                uriString.Append(queryString);
 
             var uri = new Uri(uriString.ToString());
 

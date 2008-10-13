@@ -200,7 +200,8 @@ namespace LitS3
             if (!UseSubdomains)
                 uriString.Append(bucketName).Append('/');
 
-            uriString.Append(Uri.EscapeUriString(key));
+            // EscapeDataString allows keys to have any characters, including "+".
+            uriString.Append(Uri.EscapeDataString(key));
 
             return uriString.ToString();
         }
@@ -214,9 +215,9 @@ namespace LitS3
         /// <remarks>
         /// You might expect this method to return a System.Uri instead of a string. It turns out
         /// there is a tricky issue with constructing Uri objects from these pre-authenticated
-        /// url strings: Amazon S3 can't handle querystring signatures with the "+" character.
-        /// But the Uri.ToString() method will unescape even a properly encoded "+" back into a raw "+",
-        /// which will cause S3 to choke on the url if you were to take the Uri.ToString() and feed
+        /// url strings: The Uri.ToString() method will convert a properly-encoded "+" character back
+        /// into a raw "+", which is interpreted by Amazon S3 as a space (standard URI conventions).
+        /// So the signature will be misread if you were to take the Uri.ToString() and feed
         /// it to a browser. So instead, we'll give you a properly escaped URL string which 
         /// will always work in a browser. If you want to, say, use it in a WebRequest instead, 
         /// it turns out that WebRequest will leave it escaped properly and everything will work.
