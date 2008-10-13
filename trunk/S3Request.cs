@@ -58,7 +58,6 @@ namespace LitS3
             request.Method = method;
             request.AllowWriteStreamBuffering = true; // AddObject will make this false
             request.AllowAutoRedirect = true;
-            
             return request;
         }
 
