@@ -5,29 +5,29 @@
 If you need to start measuring upload/download progress then you can't use the "helper" method of S3Service anymore, you'll need to use the AddObjectRequest/GetObjectRequest directly, and implement your own stream copying, with periodic progress updates.
 
 {{{
-                // Download dynamically into a stream
-                var request = new GetObjectRequest(s3, "MyBucket", "my-big-file");
+// Download dynamically into a stream
+var request = new GetObjectRequest(s3, "MyBucket", "my-big-file");
 
-                using (GetObjectResponse response = request.GetResponse())
-                {
-                    var buffer = new byte[31768];
-                    var bytesDownloaded = 0;
-                    var responseStream = response.GetResponseStream();
+using (GetObjectResponse response = request.GetResponse())
+{
+    var buffer = new byte[31768];
+    var bytesDownloaded = 0;
+    var responseStream = response.GetResponseStream();
 
-                    while (bytesDownloaded < response.ContentLength)
-                    {
-                        var bytesRead = responseStream.Read(buffer, 0, buffer.Length);
-                        
-                        // write the downloaded data somewhere...
-                        
-                        bytesDownloaded += bytesRead;
+    while (bytesDownloaded < response.ContentLength)
+    {
+        var bytesRead = responseStream.Read(buffer, 0, buffer.Length);
+        
+        // write the downloaded data somewhere...
+        
+        bytesDownloaded += bytesRead;
 
-                        var percent = (int)(((float)bytesDownloaded / (float)response.ContentLength) * 100);
+        var percent = (int)(((float)bytesDownloaded / (float)response.ContentLength) * 100);
 
-                        Console.CursorLeft = 0;
-                        Console.Write("Downloading... {0}%", percent);
-                    }
-                }
+        Console.CursorLeft = 0;
+        Console.Write("Downloading... {0}%", percent);
+    }
+}
 }}}
 
 The procedure is similar for uploading, in that case you would use GetRequestStream() and write data into that.
