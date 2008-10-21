@@ -2,7 +2,7 @@
 
 == Downloading a file with progress updates ==
 
-If you need to start measuring upload/download progress then you can't use the "helper" method of S3Service anymore, you'll need to use the AddObjectRequest/GetObjectRequest directly, and implement your own stream copying, with periodic progress updates.
+If you need to start measuring upload/download progress then you can't use the "helper" method of `S3Service` anymore, you'll need to use the `AddObjectRequest`/`GetObjectRequest` directly, and implement your own stream copying, with periodic progress updates.
 
 {{{
 // Download dynamically into a stream
