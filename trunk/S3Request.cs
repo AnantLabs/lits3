@@ -58,6 +58,11 @@ namespace LitS3
             request.Method = method;
             request.AllowWriteStreamBuffering = true; // AddObject will make this false
             request.AllowAutoRedirect = true;
+
+            // S3 will never "timeout" a request. However, network delays may still cause a
+            // timeout according to WebRequest's ReadWriteTimeout property, which you can modify.
+            request.Timeout = int.MaxValue;
+            
             return request;
         }
 
@@ -105,16 +110,6 @@ namespace LitS3
         public ServicePoint ServicePoint
         {
             get { return WebRequest.ServicePoint; }
-        }
-
-        /// <summary>
-        /// Gets or sets the time-out value in milliseconds for the GetResponse() and
-        /// GetResponseStream (if present) method. The default is 100 seconds.
-        /// </summary>
-        public int Timeout
-        {
-            get { return WebRequest.Timeout; }
-            set { WebRequest.Timeout = value; }
         }
 
         #endregion
