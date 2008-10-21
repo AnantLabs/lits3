@@ -245,7 +245,7 @@ namespace LitS3
             string contentType, CannedAcl acl)
         {
             var request = new AddObjectRequest(this, bucketName, key);
-            request.ContentLength = inputStream.Length;
+            request.ContentLength = bytes;
 
             if (contentType != null) // if specified
                 request.ContentType = contentType;
@@ -257,6 +257,14 @@ namespace LitS3
                 CopyStream(inputStream, requestStream, bytes);
 
             request.GetResponse().Close();
+        }
+
+        /// <summary>
+        /// Adds an object to S3 by reading the specified amount of data from the given stream.
+        /// </summary>
+        public void AddObject(Stream inputStream, long bytes, string bucketName, string key)
+        {
+            AddObject(inputStream, bytes, bucketName, key, null, default(CannedAcl));
         }
 
         /// <summary>
@@ -321,17 +329,38 @@ namespace LitS3
         #region GetObject and overloads
 
         /// <summary>
-        /// Gets an existing object in S3 and copies its data to the given Stream.
+        /// Gets a data stream for an existing object in S3. It is your responsibility to close
+        /// the Stream when you are finished.
         /// </summary>
-        public void GetObject(string bucketName, string key, Stream outputStream, out string contentType)
+        public Stream GetObjectStream(string bucketName, string key, 
+            out long contentLength, out string contentType)
         {
             var request = new GetObjectRequest(this, bucketName, key);
+            GetObjectResponse response = request.GetResponse();
+            contentLength = response.ContentLength;
+            contentType = response.ContentType;
+            return response.GetResponseStream();
+        }
 
-            using (GetObjectResponse response = request.GetResponse())
-            {
-                contentType = response.ContentType;
-                CopyStream(response.GetResponseStream(), outputStream, response.ContentLength);
-            }
+        /// <summary>
+        /// Gets a data stream for an existing object in S3. It is your responsibility to close
+        /// the Stream when you are finished.
+        /// </summary>
+        public Stream GetObjectStream(string bucketName, string key)
+        {
+            long contentLength;
+            string contentType;
+            return GetObjectStream(bucketName, key, out contentLength, out contentType);
+        }
+
+        /// <summary>
+        /// Gets an existing object in S3 and copies its data to the given Stream.
+        /// </summary>
+        public void GetObject(string bucketName, string key, Stream outputStream, 
+            out long contentLength, out string contentType)
+        {
+            using (Stream objectStream = GetObjectStream(bucketName, key, out contentLength, out contentType))
+                CopyStream(objectStream, outputStream, contentLength);
         }
 
         /// <summary>
@@ -339,8 +368,7 @@ namespace LitS3
         /// </summary>
         public void GetObject(string bucketName, string key, Stream outputStream)
         {
-            string contentType;
-            GetObject(bucketName, key, outputStream, out contentType);
+            GetObject(bucketName, key, outputStream);
         }
 
         /// <summary>
@@ -348,8 +376,9 @@ namespace LitS3
         /// </summary>
         public void GetObject(string bucketName, string key, string outputFile, out string contentType)
         {
+            long contentLength;
             using (Stream outputStream = File.Create(outputFile))
-                GetObject(bucketName, key, outputStream, out contentType);
+                GetObject(bucketName, key, outputStream, out contentLength, out contentType);
         }
 
         /// <summary>
@@ -369,8 +398,9 @@ namespace LitS3
         {
             using (var outputStream = new MemoryStream())
             {
-                GetObject(bucketName, key, outputStream, out contentType);
-                return Encoding.UTF8.GetString(outputStream.GetBuffer(), 0, (int)outputStream.Length);
+                long contentLength;
+                GetObject(bucketName, key, outputStream, out contentLength, out contentType);
+                return Encoding.UTF8.GetString(outputStream.GetBuffer(), 0, (int)contentLength);
             }
         }
 
