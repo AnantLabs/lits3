@@ -254,7 +254,10 @@ namespace LitS3
                 request.CannedAcl = acl;
 
             using (Stream requestStream = request.GetRequestStream())
+            {
                 CopyStream(inputStream, requestStream, bytes);
+                requestStream.Flush();
+            }
 
             request.GetResponse().Close();
         }
