@@ -142,7 +142,7 @@ namespace LitS3
             catch (WebException exception)
             {
                 var response = exception.Response as HttpWebResponse;
-                if (response.StatusCode == HttpStatusCode.NotFound)
+                if (response != null && response.StatusCode == HttpStatusCode.NotFound)
                     return false;
                 else
                     throw;
