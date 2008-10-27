@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Net;
 
 namespace LitS3
 {
@@ -123,6 +124,28 @@ namespace LitS3
                     case S3ErrorCode.AccessDenied: return BucketAccess.NotAccessible;
                     default: throw;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the given object exists in the given bucket.
+        /// </summary>
+        public bool ObjectExists(string bucketName, string key)
+        {
+            var request = new GetObjectRequest(this, bucketName, key, true);
+
+            try
+            {
+                using (GetObjectResponse response = request.GetResponse())
+                    return true;
+            }
+            catch (WebException exception)
+            {
+                var response = exception.Response as HttpWebResponse;
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                    return false;
+                else
+                    throw;
             }
         }
 

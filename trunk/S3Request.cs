@@ -132,7 +132,8 @@ namespace LitS3
             // if this is a protocol error and the response type is XML, we can expect that
             // S3 sent us an <Error> message.
             if (exception.Status == WebExceptionStatus.ProtocolError &&
-                exception.Response.ContentType == "application/xml")
+                exception.Response.ContentType == "application/xml" &&
+                exception.Response.ContentLength > 0)
             {
                 var wrapped = S3Exception.FromWebException(exception);
                 throw wrapped; // do this on a separate statement so the debugger can re-execute
