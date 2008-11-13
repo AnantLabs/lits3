@@ -1,0 +1,3 @@
+= Certificates =
+
+Mono does not ship with any trusted roots, so talking to amazon's S3 servers over HTTPS will immediately fail. See [http://manpages.ubuntu.com/manpages/hardy/man1/mozroots.html mozroots] for more information on how to address this.
