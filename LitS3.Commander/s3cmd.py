@@ -387,7 +387,11 @@ class TrustAnyCertificatePolicy(ICertificatePolicy):
         return True
 
 def print_help():
-    print """Usage:
+    print """LitS3 Commander - $Revision$
+Command-line interface to LitS3
+http://lits3.googlecode.com/
+
+Usage:
 
   %(this)s COMMAND AWS-KEY-ID AWS-SECRET-KEY ARGS
   %(this)s COMMAND - - ARGS
