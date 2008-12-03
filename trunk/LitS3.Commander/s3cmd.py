@@ -284,6 +284,9 @@ class S3Commander(object):
         print '\n'.join(
             ['%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in self.s3.GetAllBuckets()])
 
+    def ls(self, args):
+        self.list(args)
+ 
     def list(self, args):
         """Lists all objects in a bucket, optionally constrained by a prefix."""
         if not args:
@@ -399,7 +402,7 @@ Usage:
 where:
 
   COMMAND is one of:
-    buckets, list, put, get, puts, gets, pops, rm/del
+    buckets, list (ls), put, get, puts, gets, pops, rm (del)
   AWS-KEY-ACCESS-ID 
     Your AWS access key ID
   AWS-SECRET-ACCESS-KEY 
