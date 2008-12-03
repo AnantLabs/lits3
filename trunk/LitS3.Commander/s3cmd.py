@@ -385,15 +385,91 @@ class S3Commander(object):
 class TrustAnyCertificatePolicy(ICertificatePolicy):
     def CheckValidationResult(self, sp, cert, request, problem):
         return True
+
+def print_help():
+    print """Usage:
+
+  %(this)s COMMAND AWS-KEY-ID AWS-SECRET-KEY ARGS
+  %(this)s COMMAND - - ARGS
+ 
+where:
+
+  COMMAND is one of:
+    buckets, list, put, get, puts, gets, pops, rm/del
+  AWS-KEY-ACCESS-ID 
+    Your AWS access key ID
+  AWS-SECRET-ACCESS-KEY 
+    Your AWS secret access key
+  ARGS
+    COMMAND-specific arguments
+
+The access identifiers can be set into your environment. If you then 
+use a dash where an identifier is expected then the corresponding value 
+will be picked up from the environment. The environment variables 
+sought are AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY. With those in 
+place, you can simply resort to the second usage:
+ 
+  %(this)s COMMAND - - ARGS
+ 
+Each COMMAND has its own set of ARGS. Also as a general rule, each 
+COMMAND that works with an object uses a a simple path scheme to 
+identify the object. That scheme simply looks like this:
+ 
+  BUCKET / KEY
+ 
+Examples:
+ 
+%(this)s buckets - -
+  List all my buckets
+ 
+%(this)s list - - foo
+  List all objects in foo bucket
+ 
+%(this)s list - - foo/images/
+  List all objects in bucket foo with the common prefix of images/
+ 
+%(this)s put - -  foo index.html
+  Add local file named index.html as key index.html in bucket foo
+ 
+%(this)s put - - foo/images/ ani.gif
+  Add local file named ani.gif as key images/ani.gif in bucket foo
+ 
+%(this)s put - - foo/images/animation.gif ani.gif
+  Add local file named ani.gif as key images/animation.gif 
+  in bucket foo
+ 
+%(this)s get - - foo/index.html
+  Get object with key index.html in bucket foo as local file named 
+  index.html
+ 
+%(this)s get - - foo/index.html bar.html
+  Get object with key index.html in bucket foo as local file 
+  named bar.html
+ 
+%(this)s rm - - foo/index.html
+  Remove the object with key index.html in the bucket foo
+ 
+dir | %(this)s puts - - foo/dir.txt
+  Puts the output from dir (on Windows; ls on Unix platforms) as a 
+  plain text object named dir.txt in bucket foo
+ 
+%(this)s gets - - foo/dir.txt
+  Gets the plain text object named dir.txt in bucket foo and writes 
+  its content to standard output
+ 
+%(this)s pops - - foo/dir.txt
+  Gets the plain text object named dir.txt in bucket foo, writes its 
+  content to standard output and then removes the object.
+""" % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
         
 def main(args):
 
     if not args:
-        raise Exception('Missing command.')
+        raise Exception('Missing command. Try help.')
     
     cmd_name = args.pop(0).replace('del', 'rm') # pop + alias
     if 'help' == cmd_name:
-        print 'Help will be on its way soon... ;)'
+        print_help()
         return
 
     id = args and args.pop(0) or None
