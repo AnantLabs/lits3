@@ -419,7 +419,7 @@ place, you can simply resort to the second usage:
   %(this)s COMMAND - - ARGS
  
 Each COMMAND has its own set of ARGS. Also as a general rule, each 
-COMMAND that works with an object uses a a simple path scheme to 
+COMMAND that works with an object uses a simple path scheme to 
 identify the object. That scheme simply looks like this:
  
   BUCKET / KEY
