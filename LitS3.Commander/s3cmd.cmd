@@ -1,1 +1,1 @@
-@"%~dp0ipy\ipy" %~dpn0.py %*
+@"%~dp0ipy\ipy" "%~dpn0.py" %*
