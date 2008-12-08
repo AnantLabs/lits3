@@ -31,11 +31,14 @@
 
 import sys, clr
 
-from System import Int64, Byte, Array
-from System.IO import Path, FileInfo, Directory, MemoryStream
+from System import Int64, Byte, Array, Convert, Environment
+from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
 from System.Environment import GetEnvironmentVariable
 from System.Net import ServicePointManager, ICertificatePolicy
+
+clr.AddReference("System.Security")
+from System.Security.Cryptography import ProtectedData, DataProtectionScope, RNGCryptoServiceProvider
 
 # Add debug and release build paths
 sys.path.extend([Path.Combine(Path.GetDirectoryName(sys.argv[0]), '..\\bin\\' + bld) 
@@ -385,6 +388,32 @@ class S3Commander(object):
         txt = Encoding.UTF8.GetString(output.GetBuffer(), 0, content_length)
         return (bucket, key, txt)
         
+def app_lpath(rhs = None):
+    """Creates a path under where local application data is stored."""
+    path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 'LitS3')
+    return rhs and Path.Combine(path, rhs) or path
+
+def protect_user_str(secret, entropy):
+    """Protects a string for the current user."""
+    return ProtectedData.Protect(Encoding.UTF8.GetBytes(secret), entropy, DataProtectionScope.CurrentUser)
+
+def unprotect_user_str(secret, entropy):
+    """Unprotects a string previously protected for the current user."""
+    return Encoding.UTF8.GetString(ProtectedData.Unprotect(secret, entropy, DataProtectionScope.CurrentUser))
+
+def save_aws_ids(path, id, key):
+    """Saves AWS identifiers securely to a file."""
+    entropy = Array.CreateInstance(Byte, 16)
+    RNGCryptoServiceProvider().GetBytes(entropy)
+    id, key = protect_user_str(id, entropy), protect_user_str(key, entropy)
+    File.WriteAllText(path, Environment.NewLine.join([Convert.ToBase64String(item) for item in (entropy, id, key)]))
+
+def load_aws_ids(path):
+    """Loads AWS identifiers from a secured file."""
+    lines = File.ReadAllLines(path)[:3]
+    entropy, id, key = [Convert.FromBase64String(line) for line in lines]
+    return unprotect_user_str(id, entropy), unprotect_user_str(key, entropy)
+       
 class TrustAnyCertificatePolicy(ICertificatePolicy):
     def CheckValidationResult(self, sp, cert, request, problem):
         return True
@@ -479,17 +508,27 @@ def main(args):
         print_help()
         return
 
+    ids_fpath = GetEnvironmentVariable('AWS_IDS_FILE') or app_lpath('aws-ids')
+    saved_id, saved_key = File.Exists(ids_fpath) and load_aws_ids(ids_fpath) or (None, None)
+
     id = args and args.pop(0) or None
     if id == '-':
-        id = GetEnvironmentVariable('AWS_ACCESS_KEY_ID')
+        id = GetEnvironmentVariable('AWS_ACCESS_KEY_ID') or saved_id
     if not id:
         raise Exception('Missing AWS access key ID.')
 
     key = args and args.pop(0) or None
     if key == '-':
-        key = GetEnvironmentVariable('AWS_SECRET_ACCESS_KEY')
+        key = GetEnvironmentVariable('AWS_SECRET_ACCESS_KEY') or saved_key
     if not key:
         raise Exception('Missing AWS secret access key.')
+
+    if 'ids' == cmd_name:
+        ids_fpath = args and args.pop(0) or ids_fpath
+        save_aws_ids(ids_fpath, id, key)
+        print 'AWS identifiers securely saved to:'
+        print Path.GetFullPath(ids_fpath)
+        return
 
     s3 = S3Service(AccessKeyID = id, SecretAccessKey = key)
 
