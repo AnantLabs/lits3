@@ -431,7 +431,7 @@ Usage:
 where:
 
   COMMAND is one of:
-    buckets, list (ls), put, get, puts, gets, pops, rm (del)
+    buckets, list (ls), put, get, puts, gets, pops, rm (del), ids
   AWS-KEY-ACCESS-ID 
     Your AWS access key ID
   AWS-SECRET-ACCESS-KEY 
@@ -446,6 +446,10 @@ sought are AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY. With those in
 place, you can simply resort to the second usage:
  
   %(this)s COMMAND - - ARGS
+  
+The access identifiers can also be securely saved into a file instead
+of environment variables. To do this, use "ids" (without quotes) as
+COMMAND.
  
 Each COMMAND has its own set of ARGS. Also as a general rule, each 
 COMMAND that works with an object uses a simple path scheme to 
