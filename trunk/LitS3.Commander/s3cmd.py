@@ -290,28 +290,25 @@ class S3Commander(object):
     def __init__(self, s3):
         self.s3 = s3
     
-    def buckets(self, args):
-        """Lists all buckets."""
-        print '\n'.join(
-            ['%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in self.s3.GetAllBuckets()])
-
     def ls(self, args):
         self.list(args)
  
     def list(self, args):
-        """Lists all objects in a bucket, optionally constrained by a prefix."""
+        """Lists all buckets or objects in a bucket, optionally constrained by a prefix."""
         if not args:
-            raise Exception('Missing S3 path.')
-        bucket, prefix = parse_s3uri(args.pop(0))
-        objs = self.s3.ListObjects(bucket, prefix)
-        for obj in objs:
-            if type(obj) == CommonPrefix:
-                print ' ' * 53 + obj.Prefix
-            else:
-                print '%s  %20s  %s' % (
-                    obj.LastModified.ToString('r'), 
-                    obj.Size.ToString('N0'),
-                    obj.Key[len(prefix):])
+            print '\n'.join(
+                ['%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in self.s3.GetAllBuckets()])
+        else:
+            bucket, prefix = parse_s3uri(args.pop(0))
+            objs = self.s3.ListObjects(bucket, prefix)
+            for obj in objs:
+                if type(obj) == CommonPrefix:
+                    print ' ' * 53 + obj.Prefix
+                else:
+                    print '%s  %20s  %s' % (
+                        obj.LastModified.ToString('r'), 
+                        obj.Size.ToString('N0'),
+                        obj.Key[len(prefix):])
 
     def put(self, args):
         """Puts a local file as an object in a bucket."""
@@ -439,7 +436,7 @@ Usage:
 where:
 
   COMMAND is one of:
-    buckets, list (ls), put, get, puts, gets, pops, rm (del), ids
+    ls (list), put, get, puts, gets, pops, rm (del), ids
   AWS-KEY-ACCESS-ID 
     Your AWS access key ID
   AWS-SECRET-ACCESS-KEY 
@@ -467,13 +464,13 @@ identify the object. That scheme simply looks like this:
  
 Examples:
  
-%(this)s buckets - -
+%(this)s ls - -
   List all my buckets
  
-%(this)s list - - s3://foo
+%(this)s ls - - s3://foo
   List all objects in foo bucket
  
-%(this)s list - - s3://foo/images/
+%(this)s ls - - s3://foo/images/
   List all objects in bucket foo with the common prefix of images/
  
 %(this)s put - -  s3://foo index.html
