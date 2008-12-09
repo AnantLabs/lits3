@@ -29,9 +29,10 @@
 
 # $Id$
 
-import sys, clr
+import sys, clr, re
 
-from System import Int64, Byte, Array, Convert, Environment
+from System import Int64, Byte, Array, Convert, Environment, \
+    Uri, UriFormat, UriComponents, UriParser, GenericUriParser, GenericUriParserOptions
 from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
 from System.Environment import GetEnvironmentVariable
@@ -262,10 +263,17 @@ MIME_MAP = {
     'xltx'    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
 }
 
-def parse_s3obj_path(path):
-    """Parses an S3 object path into its bucket and key constituents."""
-    i = path.find('/')
-    return i >= 0 and (path[0:i], path[i+1:]) or (path, '')
+UriParser.Register(
+    GenericUriParser(GenericUriParserOptions.NoQuery 
+                     | GenericUriParserOptions.NoPort 
+                     | GenericUriParserOptions.NoFragment 
+                     | GenericUriParserOptions.NoUserInfo), 
+    's3', 0)
+
+def parse_s3uri(path):
+    """Parses an S3 URI into its bucket and key constituents."""
+    uri = Uri(path)
+    return uri.Authority, uri.GetComponents(UriComponents.Path, UriFormat.Unescaped)
 
 def copy_stream(source, dest, length):
     buffer = Array.CreateInstance(Byte, 8192)
@@ -294,7 +302,7 @@ class S3Commander(object):
         """Lists all objects in a bucket, optionally constrained by a prefix."""
         if not args:
             raise Exception('Missing S3 path.')
-        bucket, prefix = parse_s3obj_path(args.pop(0))
+        bucket, prefix = parse_s3uri(args.pop(0))
         objs = self.s3.ListObjects(bucket, prefix)
         for obj in objs:
             if type(obj) == CommonPrefix:
@@ -309,7 +317,7 @@ class S3Commander(object):
         """Puts a local file as an object in a bucket."""
         if not args:
             raise Exception('Missing target object path.')
-        bucket, key = parse_s3obj_path(args.pop(0))
+        bucket, key = parse_s3uri(args.pop(0))
         if not args:
             raise Exception('Missing local file path.')
         fpath = args.pop(0)
@@ -325,7 +333,7 @@ class S3Commander(object):
         """Puts text from standard input as an object in a bucket."""
         if not args:
             raise Exception('Missing target object for text.')
-        bucket, key = parse_s3obj_path(args.pop(0))
+        bucket, key = parse_s3uri(args.pop(0))
         if not key:
             raise Exception('Missing key for text.')
         txt = sys.stdin.read()
@@ -337,7 +345,7 @@ class S3Commander(object):
         """Gets an object from a bucket as a local file."""
         if not args:
             raise Exception('Missing source object path.')
-        bucket, key = parse_s3obj_path(args.pop(0))
+        bucket, key = parse_s3uri(args.pop(0))
         if not key:
             raise Exception('Missing key.')
         name = key.split('/')[-1]
@@ -357,13 +365,13 @@ class S3Commander(object):
         """Removes and sends an object from a bucket to standard output."""
         bucket, key, txt = self.__gets(args)
         print txt
-        self.rm([bucket + '/' + key])
+        self.rm([Uri(Uri('s3://' + bucket), key).ToString()])
 
     def rm(self, args):
         """Removes an from a bucket."""
         if not args:
             raise Exception('Missing object path.')
-        bucket, key = parse_s3obj_path(args.pop(0))
+        bucket, key = parse_s3uri(args.pop(0))
         if not key:
             raise Exception('Missing key.')
         self.s3.DeleteObject(bucket, key)
@@ -371,7 +379,7 @@ class S3Commander(object):
     def __gets(self, args):
         if not args:
             raise Exception('Missing source object path.')
-        bucket, key = parse_s3obj_path(args.pop(0))
+        bucket, key = parse_s3uri(args.pop(0))
         if not key:
             raise Exception('Missing key.')
         content_type = clr.Reference[str]()
@@ -455,49 +463,49 @@ Each COMMAND has its own set of ARGS. Also as a general rule, each
 COMMAND that works with an object uses a simple path scheme to 
 identify the object. That scheme simply looks like this:
  
-  BUCKET / KEY
+  "s3://" BUCKET ( "/" KEY )
  
 Examples:
  
 %(this)s buckets - -
   List all my buckets
  
-%(this)s list - - foo
+%(this)s list - - s3://foo
   List all objects in foo bucket
  
-%(this)s list - - foo/images/
+%(this)s list - - s3://foo/images/
   List all objects in bucket foo with the common prefix of images/
  
-%(this)s put - -  foo index.html
+%(this)s put - -  s3://foo index.html
   Add local file named index.html as key index.html in bucket foo
  
-%(this)s put - - foo/images/ ani.gif
+%(this)s put - - s3://foo/images/ ani.gif
   Add local file named ani.gif as key images/ani.gif in bucket foo
  
-%(this)s put - - foo/images/animation.gif ani.gif
+%(this)s put - - s3://foo/images/animation.gif ani.gif
   Add local file named ani.gif as key images/animation.gif 
   in bucket foo
  
-%(this)s get - - foo/index.html
+%(this)s get - - s3://foo/index.html
   Get object with key index.html in bucket foo as local file named 
   index.html
  
-%(this)s get - - foo/index.html bar.html
+%(this)s get - - s3://foo/index.html bar.html
   Get object with key index.html in bucket foo as local file 
   named bar.html
  
-%(this)s rm - - foo/index.html
+%(this)s rm - - s3://foo/index.html
   Remove the object with key index.html in the bucket foo
  
-dir | %(this)s puts - - foo/dir.txt
+dir | %(this)s puts - - s3://foo/dir.txt
   Puts the output from dir (on Windows; ls on Unix platforms) as a 
   plain text object named dir.txt in bucket foo
  
-%(this)s gets - - foo/dir.txt
+%(this)s gets - - s3://foo/dir.txt
   Gets the plain text object named dir.txt in bucket foo and writes 
   its content to standard output
  
-%(this)s pops - - foo/dir.txt
+%(this)s pops - - s3://foo/dir.txt
   Gets the plain text object named dir.txt in bucket foo, writes its 
   content to standard output and then removes the object.
 """ % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
