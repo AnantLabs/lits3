@@ -147,11 +147,11 @@ namespace LitS3
             get
             {
                 while (!Reader.IsEmptyElement && Reader.Name == "Contents")
-                    yield return new ObjectEntry(Reader);
+                    yield return new ObjectEntry(Reader, Prefix, Delimiter);
 
                 while (Reader.Name == "CommonPrefixes" && Reader.Read())
                     while (Reader.Name == "Prefix")
-                        yield return new CommonPrefix(Reader);
+                        yield return new CommonPrefix(Reader, Prefix, Delimiter);
             }
         }
     }

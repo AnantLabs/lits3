@@ -10,6 +10,12 @@ namespace LitS3
     public abstract class ListEntry
     {
         internal ListEntry() { }
+
+        /// <summary>
+        /// Gets the name of this entry, which is the portion of the key or common prefix after the
+        /// search prefix.
+        /// </summary>
+        public string Name { get; protected set; }
     }
 
     /// <summary>
@@ -42,7 +48,7 @@ namespace LitS3
         /// </summary>
         public Identity Owner { get; private set; }
 
-        internal ObjectEntry(XmlReader reader)
+        internal ObjectEntry(XmlReader reader, string searchPrefix, string delimiter)
         {
             if (reader.IsEmptyElement)
                 throw new Exception("Expected a non-empty <Contents> element.");
@@ -62,11 +68,19 @@ namespace LitS3
                 reader.Skip();
 
             reader.ReadEndElement();
+
+            this.Name = Key;
+
+            if (!string.IsNullOrEmpty(searchPrefix))
+                this.Name = Name.Substring(searchPrefix.Length);
+
+            if (!string.IsNullOrEmpty(delimiter))
+                this.Name = Name.Substring(0, Name.Length - delimiter.Length);
         }
 
         public override string ToString()
         {
-            return string.Format("S3Object \"{0}\"", Key);
+            return string.Format("S3Object \"{0}\"", Name);
         }
     }
 
@@ -81,17 +95,25 @@ namespace LitS3
         /// </summary>
         public string Prefix { get; private set; }
 
-        internal CommonPrefix(XmlReader reader)
+        internal CommonPrefix(XmlReader reader, string searchPrefix, string delimiter)
         {
             if (reader.IsEmptyElement)
                 throw new Exception("Expected a non-empty <Prefix> element.");
 
             this.Prefix = reader.ReadElementContentAsString("Prefix", "");
+
+            this.Name = Prefix;
+
+            if (!string.IsNullOrEmpty(searchPrefix))
+                this.Name = Name.Substring(searchPrefix.Length);
+
+            if (!string.IsNullOrEmpty(delimiter))
+                this.Name = Name.Substring(0, Name.Length - delimiter.Length);
         }
 
         public override string ToString()
         {
-            return string.Format("Common Prefix \"{0}\"", Prefix);
+            return string.Format("Common Prefix \"{0}\"", Name);
         }
     }
 }
