@@ -163,8 +163,8 @@ namespace LitS3
         /// <summary>
         /// Queries a bucket for a listing of objects it contains. Only objects with keys
         /// beginning with the given prefix will be returned. The DefaultDelimiter will
-        /// be used. This method is for convenience and will throw an exception if the
-        /// response was truncated due to too many items.
+        /// be used. If you expect a large number of objects to be returned, consider using
+        /// ListAllObjects().
         /// </summary>
         public List<ListEntry> ListObjects(string bucketName, string prefix)
         {
@@ -178,6 +178,17 @@ namespace LitS3
 
                 return new List<ListEntry>(response.Entries);
             }
+        }
+
+        /// <summary>
+        /// Queries a bucket for a listing of objects it contains. Only objects with keys
+        /// beginning with the given prefix will be returned. The DefaultDelimiter will
+        /// be used. This method returns a ListEntryReader which is capable of reading an unlimited
+        /// number of objects. You must close the reader when you are finished with it.
+        /// </summary>
+        public ListEntryReader ListAllObjects(string bucketName, string prefix)
+        {
+            return new ListEntryReader(this, bucketName, prefix, DefaultDelimiter);
         }
 
         /// <summary>
