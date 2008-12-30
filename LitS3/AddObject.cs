@@ -149,6 +149,19 @@ namespace LitS3
         }
 
         /// <summary>
+        /// Submits the request to the server and performs the given action with the request
+        /// stream which should be filled with the object's data. The GetResponse() method
+        /// will automatically be called after the action is executed.
+        /// </summary>
+        public void GetRequestStream(Action<Stream> action)
+        {
+            using (Stream stream = GetRequestStream())
+                action(stream);
+
+            GetResponse().Close();
+        }
+
+        /// <summary>
         /// Begins an asynchronous request for a Stream object to use to write object data.
         /// </summary>
         public IAsyncResult BeginGetRequestStream(AsyncCallback callback, object state)

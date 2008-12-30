@@ -192,6 +192,18 @@ namespace LitS3
         }
 
         /// <summary>
+        /// Queries a bucket for a listing of objects it contains and performs the given
+        /// action on each object. Only objects with keys beginning with the given prefix 
+        /// will be returned. The DefaultDelimiter will be used.
+        /// </summary>
+        public void ListAllObjects(string bucketName, string prefix, Action<ListEntry> action)
+        {
+            using (ListEntryReader reader = ListAllObjects(bucketName, prefix))
+                foreach (ListEntry entry in reader.Entries)
+                    action(entry);
+        }
+
+        /// <summary>
         /// Deletes the bucket with the given name.
         /// </summary>
         public void DeleteBucket(string bucketName)
@@ -273,27 +285,43 @@ namespace LitS3
         #region AddObject and overloads
 
         /// <summary>
-        /// Adds an object to S3 by reading the specified amount of data from the given stream.
+        /// Adds an object to S3 by acquiring the upload stream then allowing the given
+        /// function to handle writing data into it.
         /// </summary>
-        public void AddObject(Stream inputStream, long bytes, string bucketName, string key, 
-            string contentType, CannedAcl acl)
+        public void AddObject(string bucketName, string key, long bytes, string contentType,
+            CannedAcl acl, Action<Stream> action)
         {
-            var request = new AddObjectRequest(this, bucketName, key);
-            request.ContentLength = bytes;
-
+            var request = new AddObjectRequest(this, bucketName, key) { ContentLength = bytes };
+            
             if (contentType != null) // if specified
                 request.ContentType = contentType;
 
             if (acl != default(CannedAcl))
                 request.CannedAcl = acl;
 
-            using (Stream requestStream = request.GetRequestStream())
-            {
-                CopyStream(inputStream, requestStream, bytes);
-                requestStream.Flush();
-            }
+            request.GetRequestStream(action);
+        }
 
-            request.GetResponse().Close();
+        /// <summary>
+        /// Adds an object to S3 by acquiring the upload stream then allowing the given
+        /// function to handle writing data into it.
+        /// </summary>
+        public void AddObject(string bucketName, string key, long bytes, Action<Stream> action)
+        {
+            AddObject(bucketName, key, bytes, null, default(CannedAcl), action);
+        }
+
+        /// <summary>
+        /// Adds an object to S3 by reading the specified amount of data from the given stream.
+        /// </summary>
+        public void AddObject(Stream inputStream, long bytes, string bucketName, string key, 
+            string contentType, CannedAcl acl)
+        {
+            AddObject(bucketName, key, bytes, stream =>
+            {
+                CopyStream(inputStream, stream, bytes);
+                stream.Flush();
+            });
         }
 
         /// <summary>

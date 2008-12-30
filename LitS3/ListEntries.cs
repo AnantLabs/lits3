@@ -73,9 +73,6 @@ namespace LitS3
 
             if (!string.IsNullOrEmpty(searchPrefix))
                 this.Name = Name.Substring(searchPrefix.Length);
-
-            if (!string.IsNullOrEmpty(delimiter))
-                this.Name = Name.Substring(0, Name.Length - delimiter.Length);
         }
 
         public override string ToString()
