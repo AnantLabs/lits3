@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using LitS3.Tests.Properties;
 using System.Net;
+using System.IO;
 
 namespace LitS3.Tests
 {
@@ -41,6 +42,24 @@ namespace LitS3.Tests
 
             /*
 
+            string testBucket = "ctu-test";
+
+            // Upload dynamically from a stream
+            s3.AddObject(testBucket, "test-stream", 10, stream =>
+            {
+                // write 10 ASCII characters starting with "a"
+                foreach (byte i in Enumerable.Range(65, 10))
+                    stream.WriteByte(i);
+            });
+
+            // Download dynamically from a stream
+            using (Stream stream = s3.GetObjectStream(testBucket, "test-stream"))
+                Console.WriteLine("Contents: " + new StreamReader(stream).ReadToEnd());
+            
+            // List all objects
+            s3.ListAllObjects(testBucket, null, entry => Console.WriteLine("Found: " + entry));
+
+            
             //string testBucket = "ctu-test";
             //string testKey = "hello";
 
