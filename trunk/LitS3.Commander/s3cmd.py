@@ -31,7 +31,7 @@
 
 import sys, clr, re
 
-from System import Int64, Byte, Array, Convert, Environment, \
+from System import Int64, Byte, Array, Convert, Environment, PlatformID, \
     Uri, UriFormat, UriComponents, UriParser, GenericUriParser, GenericUriParserOptions
 from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
@@ -286,6 +286,9 @@ def copy_stream(source, dest, length):
             raise Exception("Unexpected end of stream while copying.")
         length -= bytesRead
 
+def is_windows():
+    return Environment.OSVersion.Platform in (PlatformID.Win32NT, PlatformID.Win32Windows, PlatformID.Win32S, PlatformID.WinCE)
+
 class S3Commander(object):
     
     def __init__(self, s3):
@@ -323,8 +326,17 @@ class S3Commander(object):
             key = (key and key or '') + Path.GetFileName(fpath)
         content_type = MIME_MAP.get(Path.GetExtension(fpath), 'application/octet-stream')
         fname = Path.GetFileName(fpath)
-        print 'Uploading %s (%s bytes) as %s...' % (fname, FileInfo(fpath).Length.ToString('N0'), content_type),
-        self.s3.AddObject(fpath, bucket, key, content_type, CannedAcl.Private)
+        preamble = 'Uploading %s (%s bytes) as %s...' % (fname, FileInfo(fpath).Length.ToString('N0'), content_type)
+        print preamble,
+        iswin = is_windows()
+        def on_progress(sender, args):
+            if iswin:
+                print '\r%s %s (%d%%)' % (preamble, args.BytesTransferred.ToString('N0'), args.ProgressPercentage),
+        try:
+            self.s3.AddObjectProgressChanged += on_progress
+            self.s3.AddObject(fpath, bucket, key, content_type, CannedAcl.Private)
+        finally:
+            self.s3.AddObjectProgressChanged -= on_progress
         print 'OK'
 
     def puts(self, args):
@@ -351,8 +363,17 @@ class S3Commander(object):
         isdir = Directory.Exists(fpath)
         if not fpath or isdir:
             fpath =  (isdir and fpath + '\\' or '') + name
-        print 'Downloading %s to %s...' % (key, Path.GetFileName(fpath)),
-        self.s3.GetObject(bucket, key, fpath)
+        preamble = 'Downloading %s to %s...' % (key, Path.GetFileName(fpath))
+        print preamble,        
+        iswin = is_windows()
+        def on_progress(sender, args):
+            if iswin:
+                print '\r%s %s (%d%%)' % (preamble, args.BytesTransferred.ToString('N0'), args.ProgressPercentage),
+        try:
+            self.s3.GetObjectProgressChanged += on_progress
+            self.s3.GetObject(bucket, key, fpath)
+        finally:
+            self.s3.GetObjectProgressChanged -= on_progress
         print 'OK'
 
     def gets(self, args):
