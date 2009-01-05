@@ -17,6 +17,16 @@ namespace LitS3
         internal S3Authorizer Authorizer { get { return authorizer; } }
 
         /// <summary>
+        /// Reports progress for any operation that adds an object to a bucket.
+        /// </summary>
+        public event EventHandler<ObjectTransferProgressChangedEventArgs> AddObjectProgressChanged;
+
+        /// <summary>
+        /// Reports progress for any operation that gets an object from a bucket.
+        /// </summary>
+        public event EventHandler<ObjectTransferProgressChangedEventArgs> GetObjectProgressChanged;
+
+        /// <summary>
         /// Gets or sets the hostname of the s3 server, usually "s3.amazonaws.com" unless you
         /// are using a 3rd party S3 implementation.
         /// </summary>
@@ -292,7 +302,7 @@ namespace LitS3
             CannedAcl acl, Action<Stream> action)
         {
             var request = new AddObjectRequest(this, bucketName, key) { ContentLength = bytes };
-            
+
             if (contentType != null) // if specified
                 request.ContentType = contentType;
 
@@ -319,7 +329,7 @@ namespace LitS3
         {
             AddObject(bucketName, key, bytes, stream =>
             {
-                CopyStream(inputStream, stream, bytes);
+                CopyStream(inputStream, stream, bytes, CopyStreamProgressCallbackForObjectTransferProgressHandler(bucketName, key, bytes, AddObjectProgressChanged));
                 stream.Flush();
             });
         }
@@ -425,7 +435,7 @@ namespace LitS3
             out long contentLength, out string contentType)
         {
             using (Stream objectStream = GetObjectStream(bucketName, key, out contentLength, out contentType))
-                CopyStream(objectStream, outputStream, contentLength);
+                CopyStream(objectStream, outputStream, contentLength, CopyStreamProgressCallbackForObjectTransferProgressHandler(bucketName, key, contentLength, GetObjectProgressChanged));
         }
 
         /// <summary>
@@ -483,11 +493,20 @@ namespace LitS3
 
         #region CopyStream
 
-        void CopyStream(Stream source, Stream dest, long length)
+        static void CopyStream(Stream source, Stream dest, long length)
+        {
+            CopyStream(source, dest, length, null);
+        }
+
+        static void CopyStream(Stream source, Stream dest, long length, Action<long> progressCallback)
         {
             var buffer = new byte[8192];
+        
+            if (progressCallback != null)
+                progressCallback(0);
 
-            while (length > 0) // reuse this local var
+            var totalBytesRead = 0;
+            while (totalBytesRead < length) // reuse this local var
             {
                 int bytesRead = source.Read(buffer, 0, buffer.Length);
 
@@ -496,8 +515,18 @@ namespace LitS3
                 else
                     throw new Exception("Unexpected end of stream while copying.");
 
-                length -= bytesRead;
+                totalBytesRead += bytesRead;
+                
+                if (progressCallback != null) 
+                    progressCallback(totalBytesRead);
             }
+        }
+
+        private Action<long> CopyStreamProgressCallbackForObjectTransferProgressHandler(string bucketName, string key, long length, EventHandler<ObjectTransferProgressChangedEventArgs> handler)
+        {
+            return handler != null
+                 ? bytes => handler(this, new ObjectTransferProgressChangedEventArgs(bucketName, key, bytes, length))
+                 : (Action<long>) null;
         }
 
         #endregion
