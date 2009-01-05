@@ -41,9 +41,10 @@ from System.Net import ServicePointManager, ICertificatePolicy
 clr.AddReference("System.Security")
 from System.Security.Cryptography import ProtectedData, DataProtectionScope, RNGCryptoServiceProvider
 
-# Add debug and release build paths
-sys.path.extend([Path.Combine(Path.GetDirectoryName(sys.argv[0]), '..\\bin\\' + bld) 
-                    for bld in ('Release', 'Debug')])
+# Add debug and release build paths, if executed directly
+if __name__ == '__main__':
+    sys.path.extend([Path.Combine(Path.GetDirectoryName(sys.argv[0]), '..\\bin\\' + bld) 
+                        for bld in ('Release', 'Debug')])
 
 clr.AddReferenceToFileAndPath('LitS3.dll')
 from LitS3 import *
