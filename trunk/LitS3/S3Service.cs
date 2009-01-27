@@ -327,7 +327,7 @@ namespace LitS3
         public void AddObject(Stream inputStream, long bytes, string bucketName, string key, 
             string contentType, CannedAcl acl)
         {
-            AddObject(bucketName, key, bytes, stream =>
+            AddObject(bucketName, key, bytes, contentType, acl, stream =>
             {
                 CopyStream(inputStream, stream, bytes, CopyStreamProgressCallbackForObjectTransferProgressHandler(bucketName, key, bytes, AddObjectProgressChanged));
                 stream.Flush();
