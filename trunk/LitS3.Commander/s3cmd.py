@@ -407,7 +407,7 @@ class S3Commander(object):
         try:
             content_length, content_type = content_length.Value, content_type.Value
             if 'text/plain' != content_type:
-                raise Exception('Object is %s, not plain/text.' % content_type)
+                raise Exception('Object is %s, not text/plain.' % content_type)
             output = MemoryStream()
             copy_stream(input, output, content_length)
         finally:
