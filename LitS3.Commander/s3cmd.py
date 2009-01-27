@@ -46,7 +46,7 @@ if __name__ == '__main__':
     sys.path.extend([Path.Combine(Path.GetDirectoryName(sys.argv[0]), '..\\bin\\' + bld) 
                         for bld in ('Release', 'Debug')])
 
-clr.AddReferenceToFileAndPath('LitS3.dll')
+clr.AddReference('LitS3')
 from LitS3 import *
 
 MIME_MAP = {
