@@ -443,7 +443,9 @@ namespace LitS3
         /// </summary>
         public void GetObject(string bucketName, string key, Stream outputStream)
         {
-            GetObject(bucketName, key, outputStream);
+            long contentLength;
+            string contentType;
+            GetObject(bucketName, key, outputStream, out contentLength, out contentType);
         }
 
         /// <summary>
