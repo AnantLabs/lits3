@@ -415,9 +415,11 @@ class S3Commander(object):
         txt = Encoding.UTF8.GetString(output.GetBuffer(), 0, content_length)
         return (bucket, key, txt)
         
-def app_lpath(rhs = None):
+def app_lpath(rhs = None, dont_make = False):
     """Creates a path under where local application data is stored."""
     path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 'LitS3')
+    if not dont_make and not Directory.Exists(path):
+        Directory.CreateDirectory(path)
     return rhs and Path.Combine(path, rhs) or path
 
 def protect_user_str(secret, entropy):
