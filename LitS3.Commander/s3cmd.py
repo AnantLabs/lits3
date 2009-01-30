@@ -289,6 +289,35 @@ def copy_stream(source, dest, length):
 def is_windows():
     return Environment.OSVersion.Platform in (PlatformID.Win32NT, PlatformID.Win32Windows, PlatformID.Win32S, PlatformID.WinCE)
 
+def parse_options(args, names, flags = None):
+    args = list(args) # copy for r/w
+    required = [name[:-1] for name in names if '!' == name[-1:]]
+    all = [name.rstrip('!') for name in names]
+    if flags:
+        all.extend(flags)
+    options = {}
+    anon = []
+    while args:
+        arg = args.pop(0)
+        if arg[:2] == '--':
+            name = arg[2:]
+            if not name: # comment
+                break
+            if not name in all:
+                raise Exception('Unknown argument: %s' % name)
+            if flags and name in flags:
+                options[name] = True
+            elif args:
+                options[name] = args.pop(0)
+            else:
+                raise Exception('Missing argument value: %s' % name)
+        else:
+            anon.append(arg)
+    for name in required:
+        if not name in options:
+            raise Exception('Missing required argument: %s' % name)
+    return options, anon
+
 class S3Commander(object):
     
     def __init__(self, s3):
@@ -454,19 +483,19 @@ http://lits3.googlecode.com/
 
 Usage:
 
-  %(this)s COMMAND AWS-KEY-ID AWS-SECRET-KEY ARGS
-  %(this)s COMMAND - - ARGS
+  %(this)s COMMAND ARGS
  
 where:
 
   COMMAND is one of:
     ls (list), put, get, puts, gets, pops, rm (del), ids
-  AWS-KEY-ACCESS-ID 
-    Your AWS access key ID
-  AWS-SECRET-ACCESS-KEY 
-    Your AWS secret access key
   ARGS
     COMMAND-specific arguments
+    
+All commands require two arguments:
+
+  --aws-key-id VALUE      Your AWS access key ID
+  --aws-secret-key VALUE  Your AWS secret access key
 
 The access identifiers can be set into your environment. If you then 
 use a dash where an identifier is expected then the corresponding value 
@@ -474,11 +503,12 @@ will be picked up from the environment. The environment variables
 sought are AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY. With those in 
 place, you can simply resort to the second usage:
  
-  %(this)s COMMAND - - ARGS
+  %(this)s COMMAND --aws-key-id - --aws-secret-key - ARGS
   
 The access identifiers can also be securely saved into a file instead
 of environment variables. To do this, use "ids" (without quotes) as
-COMMAND.
+COMMAND. If the access identifiers can be found in the saved file
+upon start-up then the corresponding arguments can be dropped.
  
 Each COMMAND has its own set of ARGS. Also as a general rule, each 
 COMMAND that works with an object uses a simple path scheme to 
@@ -488,45 +518,45 @@ identify the object. That scheme simply looks like this:
  
 Examples:
  
-%(this)s ls - -
+%(this)s ls
   List all my buckets
  
-%(this)s ls - - s3://foo
+%(this)s ls s3://foo
   List all objects in foo bucket
  
-%(this)s ls - - s3://foo/images/
+%(this)s ls s3://foo/images/
   List all objects in bucket foo with the common prefix of images/
  
-%(this)s put - -  s3://foo index.html
+%(this)s put s3://foo index.html
   Add local file named index.html as key index.html in bucket foo
  
-%(this)s put - - s3://foo/images/ ani.gif
+%(this)s put s3://foo/images/ ani.gif
   Add local file named ani.gif as key images/ani.gif in bucket foo
  
-%(this)s put - - s3://foo/images/animation.gif ani.gif
+%(this)s put s3://foo/images/animation.gif ani.gif
   Add local file named ani.gif as key images/animation.gif 
   in bucket foo
  
-%(this)s get - - s3://foo/index.html
+%(this)s get s3://foo/index.html
   Get object with key index.html in bucket foo as local file named 
   index.html
  
-%(this)s get - - s3://foo/index.html bar.html
+%(this)s get s3://foo/index.html bar.html
   Get object with key index.html in bucket foo as local file 
   named bar.html
  
-%(this)s rm - - s3://foo/index.html
+%(this)s rm s3://foo/index.html
   Remove the object with key index.html in the bucket foo
  
-dir | %(this)s puts - - s3://foo/dir.txt
+dir | %(this)s puts s3://foo/dir.txt
   Puts the output from dir (on Windows; ls on Unix platforms) as a 
   plain text object named dir.txt in bucket foo
  
-%(this)s gets - - s3://foo/dir.txt
+%(this)s gets s3://foo/dir.txt
   Gets the plain text object named dir.txt in bucket foo and writes 
   its content to standard output
  
-%(this)s pops - - s3://foo/dir.txt
+%(this)s pops s3://foo/dir.txt
   Gets the plain text object named dir.txt in bucket foo, writes its 
   content to standard output and then removes the object.
 """ % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
@@ -544,13 +574,15 @@ def main(args):
     ids_fpath = GetEnvironmentVariable('AWS_IDS_FILE') or app_lpath('aws-ids')
     saved_id, saved_key = File.Exists(ids_fpath) and load_aws_ids(ids_fpath) or (None, None)
 
-    id = args and args.pop(0) or None
+    options, args = parse_options(args, ('aws-key-id', 'aws-secret-key'))
+
+    id = options.get('aws-key-id', '-')
     if id == '-':
         id = GetEnvironmentVariable('AWS_ACCESS_KEY_ID') or saved_id
     if not id:
         raise Exception('Missing AWS access key ID.')
 
-    key = args and args.pop(0) or None
+    key = options.get('aws-secret-key', '-')
     if key == '-':
         key = GetEnvironmentVariable('AWS_SECRET_ACCESS_KEY') or saved_key
     if not key:
