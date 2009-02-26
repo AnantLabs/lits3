@@ -36,7 +36,6 @@ from System import Int64, Byte, Array, Convert, Environment, PlatformID, \
 from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
 from System.Environment import GetEnvironmentVariable
-from System.Net import ServicePointManager, ICertificatePolicy
 
 clr.AddReference("System.Security")
 from System.Security.Cryptography import ProtectedData, DataProtectionScope, RNGCryptoServiceProvider
@@ -467,10 +466,6 @@ def load_aws_ids(path):
     entropy, id, key = [Convert.FromBase64String(line) for line in lines]
     return unprotect_user_str(id, entropy), unprotect_user_str(key, entropy)
        
-class TrustAnyCertificatePolicy(ICertificatePolicy):
-    def CheckValidationResult(self, sp, cert, request, problem):
-        return True
-
 def print_help():
     print """LitS3 Commander - $Revision$
 Command-line interface to LitS3
@@ -591,10 +586,6 @@ def main(args):
         return
 
     s3 = S3Service(AccessKeyID = id, SecretAccessKey = key)
-
-    # TODO Review policy-hack to trust any certificate.
-    # See: http://groups.google.com/group/lits3/t/7321c65188be7792
-    ServicePointManager.CertificatePolicy = TrustAnyCertificatePolicy()    
     
     commander = S3Commander(s3)
     cmd = getattr(commander, cmd_name, None)
