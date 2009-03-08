@@ -74,31 +74,16 @@ using (GetObjectResponse response = request.GetResponse())
 
 == Downloading with progress updates ==
 
-If you need to start measuring upload/download progress then you can't use the "helper" method of `S3Service` anymore, you'll need to use the `AddObjectRequest`/`GetObjectRequest` directly, and implement your own stream copying, with periodic progress updates.
+Thanks to Atif, you can use `S3Service.AddObjectProgress` and `S3Service.GetObjectProgress` to be notified when `S3Service` uploads or downloads data for you. Note that this is not threadsafe, so you should construct a new `S3Service` object instance for each of your threads that use it. 
 
 {{{
-var request = new GetObjectRequest(s3, "MyBucket", "my-big-file");
+s3.AddObjectProgress += (s, e) => Console.WriteLine("Progress: " + e.ProgressPercentage);
+s3.AddObjectString("Hello world", "lits3-demo", "Test File.txt");
 
-using (GetObjectResponse response = request.GetResponse())
-{
-    var buffer = new byte[31768];
-    var bytesDownloaded = 0;
-    var responseStream = response.GetResponseStream();
-
-    while (bytesDownloaded < response.ContentLength)
-    {
-        var bytesRead = responseStream.Read(buffer, 0, buffer.Length);
-        
-        // write the downloaded data somewhere...
-        
-        bytesDownloaded += bytesRead;
-
-        var percent = (int)(((float)bytesDownloaded / (float)response.ContentLength) * 100);
-
-        Console.CursorLeft = 0;
-        Console.Write("Downloading... {0}%", percent);
-    }
-}
+//> Progress: 0
+//> Progress: 40
+//> ...
+//> Progress: 100
 }}}
 
 The procedure is similar for uploading, in that case you would use `GetRequestStream()` and write data into that.
