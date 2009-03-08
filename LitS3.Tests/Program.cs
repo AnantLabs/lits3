@@ -40,6 +40,8 @@ namespace LitS3.Tests
 
             #region Some testing code that needs to be refactored and separated into classes
 
+            //s3.CreateBucketInEurope("test-europe234234");
+
             //var copyRequest = new CopyObjectRequest(s3, "spotlightmobile", "office.jpg", "office2.jpg");
             //copyRequest.GetResponse().Close();
 
