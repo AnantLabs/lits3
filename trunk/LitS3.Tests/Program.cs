@@ -40,6 +40,9 @@ namespace LitS3.Tests
 
             #region Some testing code that needs to be refactored and separated into classes
 
+            //s3.AddObjectProgress += (s, e) => Console.WriteLine("Progress: " + e.ProgressPercentage);
+            //s3.AddObjectString("Hello world", "ctu-test", "test-progress");
+
             //s3.CreateBucketInEurope("test-europe234234");
 
             //var copyRequest = new CopyObjectRequest(s3, "spotlightmobile", "office.jpg", "office2.jpg");

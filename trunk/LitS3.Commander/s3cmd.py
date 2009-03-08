@@ -356,10 +356,10 @@ class S3Commander(object):
             if iswin:
                 print '\r%s %s (%d%%)' % (preamble, args.BytesTransferred.ToString('N0'), args.ProgressPercentage),
         try:
-            self.s3.AddObjectProgressChanged += on_progress
+            self.s3.AddObjectProgress += on_progress
             self.s3.AddObject(fpath, bucket, key, content_type, CannedAcl.Private)
         finally:
-            self.s3.AddObjectProgressChanged -= on_progress
+            self.s3.AddObjectProgress -= on_progress
         print 'OK'
 
     def puts(self, args):
@@ -393,10 +393,10 @@ class S3Commander(object):
             if iswin:
                 print '\r%s %s (%d%%)' % (preamble, args.BytesTransferred.ToString('N0'), args.ProgressPercentage),
         try:
-            self.s3.GetObjectProgressChanged += on_progress
+            self.s3.GetObjectProgress += on_progress
             self.s3.GetObject(bucket, key, fpath)
         finally:
-            self.s3.GetObjectProgressChanged -= on_progress
+            self.s3.GetObjectProgress -= on_progress
         print 'OK'
 
     def gets(self, args):
