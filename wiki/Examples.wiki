@@ -15,23 +15,16 @@ s3.AddObject(@"C:\MyFile.txt", "MyBucket", "test-file");
 == Uploading anything using a Stream ==
 
 {{{
-var request = new AddObjectRequest(s3, "MyBucket", "test-stream");
-request.ContentLength = 36;
+string objectContents = "This will be written directly to S3.";
+long objectLength = objectContents.Length;
 
-// Add some metadata
-request.Metadata["meaning-of-life"] = "42";
-
-// This will call out to the S3 server and initiate an upload
-using (Stream requestStream = request.GetRequestStream())
+s3.AddObject("lits3-demo", "Directly Written.txt", objectLength, stream =>
 {
     // Create a StreamWriter to write some text data
-    var writer = new StreamWriter(requestStream, Encoding.ASCII);
-    writer.Write("This will be written directly to S3.");
+    var writer = new StreamWriter(stream, Encoding.ASCII);
+    writer.Write(objectContents);
     writer.Flush();
-}
-
-// We're finished, so get the response to finish our submission. Remember to Close() it!
-request.GetResponse().Close();
+});
 }}}
 
 == Downloading small text files into a String ==
