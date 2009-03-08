@@ -36,7 +36,7 @@ namespace LitS3.Tests
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
 
-            s3.ForEachBucket(Console.WriteLine);
+            /*s3.ForEachBucket(Console.WriteLine);
 
             //> Bucket "mybucket"
             //> Bucket "myotherbucket"
@@ -82,12 +82,31 @@ namespace LitS3.Tests
             }, null);
 
             // continues immediately without blocking...
+            */
+
+
+            //s3.AddObjectProgress += (s, e) => Console.WriteLine("Progress: " + e.ProgressPercentage);
+            //s3.AddObjectString("Hello world", "lits3-demo", "Test File.txt");
+
+            //> Progress: 0
+            //> Progress: 40
+            //> ...
+            //> Progress: 100
+
+
+            /*string objectContents = "This will be written directly to S3.";
+            long objectLength = objectContents.Length;
+
+            s3.AddObject("lits3-demo", "Directly Written.txt", objectLength, stream =>
+            {
+                // Create a StreamWriter to write some text data
+                var writer = new StreamWriter(stream, Encoding.ASCII);
+                writer.Write(objectContents);
+                writer.Flush();
+            });*/
 
 
             #region Some more testing code that needs to be refactored and separated into classes
-
-            //s3.AddObjectProgress += (s, e) => Console.WriteLine("Progress: " + e.ProgressPercentage);
-            //s3.AddObjectString("Hello world", "ctu-test", "test-progress");
 
             //s3.CreateBucketInEurope("test-europe234234");
 
