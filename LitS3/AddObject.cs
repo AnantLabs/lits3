@@ -153,7 +153,7 @@ namespace LitS3
         /// stream which should be filled with the object's data. The GetResponse() method
         /// will automatically be called after the action is executed.
         /// </summary>
-        public void GetRequestStream(Action<Stream> action)
+        public void PerformWithRequestStream(Action<Stream> action)
         {
             using (Stream stream = GetRequestStream())
                 action(stream);

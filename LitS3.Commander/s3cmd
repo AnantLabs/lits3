@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mono ipy/ipy.exe s3cmd.py $@

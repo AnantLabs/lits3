@@ -6,33 +6,18 @@ namespace LitS3
     /// <summary>
     /// Provides progress data for S3 object transfer operations.
     /// </summary>
-
     [Serializable]
-    public class ObjectTransferProgressChangedEventArgs : ProgressChangedEventArgs
+    public class S3ProgressEventArgs : ProgressChangedEventArgs
     {
-        private readonly string bucketName;
-        private readonly string key;
-
-        public ObjectTransferProgressChangedEventArgs(
-            string bucketName, string key,
-            long bytesTransferred, long totalBytesToTransfer) :
-                base((int) Math.Round(bytesTransferred * 100.0 / totalBytesToTransfer), null)
-        {
-            this.bucketName = bucketName;
-            this.key = key;
-            BytesTransferred = bytesTransferred;
-            TotalBytesToTransfer = totalBytesToTransfer;
-        }
-
         /// <summary>
         /// Gets the bucket of the object being transferred.
         /// </summary>
-        public string BucketName { get { return bucketName ?? string.Empty; } }
+        public string BucketName { get; private set; }
 
         /// <summary>
         /// Gets the key of the object being transferred.
         /// </summary>
-        public string Key { get { return key ?? string.Empty; } }
+        public string Key { get; private set; }
 
         /// <summary>
         /// Gets the number of bytes transferred. 
@@ -42,6 +27,16 @@ namespace LitS3
         /// <summary>
         /// Gets the total number of bytes in the transfer operation.
         /// </summary>
-        public long TotalBytesToTransfer { get; private set; }
+        public long BytesTotal { get; private set; }
+
+        public S3ProgressEventArgs(string bucketName, string key,
+            long bytesTransferred, long bytesTotal)
+            : base((int)Math.Round(bytesTransferred * 100.0 / bytesTotal), null)
+        {
+            this.BucketName = bucketName;
+            this.Key = key;
+            this.BytesTransferred = bytesTransferred;
+            this.BytesTotal = bytesTotal;
+        }
     }
 }

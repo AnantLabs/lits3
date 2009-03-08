@@ -19,12 +19,12 @@ namespace LitS3
         /// <summary>
         /// Reports progress for any operation that adds an object to a bucket.
         /// </summary>
-        public event EventHandler<ObjectTransferProgressChangedEventArgs> AddObjectProgressChanged;
+        public event EventHandler<S3ProgressEventArgs> AddObjectProgress;
 
         /// <summary>
         /// Reports progress for any operation that gets an object from a bucket.
         /// </summary>
-        public event EventHandler<ObjectTransferProgressChangedEventArgs> GetObjectProgressChanged;
+        public event EventHandler<S3ProgressEventArgs> GetObjectProgress;
 
         /// <summary>
         /// Gets or sets the hostname of the s3 server, usually "s3.amazonaws.com" unless you
@@ -309,7 +309,7 @@ namespace LitS3
             if (acl != default(CannedAcl))
                 request.CannedAcl = acl;
 
-            request.GetRequestStream(action);
+            request.PerformWithRequestStream(action);
         }
 
         /// <summary>
@@ -329,7 +329,8 @@ namespace LitS3
         {
             AddObject(bucketName, key, bytes, contentType, acl, stream =>
             {
-                CopyStream(inputStream, stream, bytes, CopyStreamProgressCallbackForObjectTransferProgressHandler(bucketName, key, bytes, AddObjectProgressChanged));
+                CopyStream(inputStream, stream, bytes,
+                    CreateProgressCallback(bucketName, key, bytes, AddObjectProgress));
                 stream.Flush();
             });
         }
@@ -463,7 +464,8 @@ namespace LitS3
             out long contentLength, out string contentType)
         {
             using (Stream objectStream = GetObjectStream(bucketName, key, out contentLength, out contentType))
-                CopyStream(objectStream, outputStream, contentLength, CopyStreamProgressCallbackForObjectTransferProgressHandler(bucketName, key, contentLength, GetObjectProgressChanged));
+                CopyStream(objectStream, outputStream, contentLength,
+                    CreateProgressCallback(bucketName, key, contentLength, GetObjectProgress));
         }
 
         /// <summary>
@@ -552,10 +554,11 @@ namespace LitS3
             }
         }
 
-        private Action<long> CopyStreamProgressCallbackForObjectTransferProgressHandler(string bucketName, string key, long length, EventHandler<ObjectTransferProgressChangedEventArgs> handler)
+        private Action<long> CreateProgressCallback(string bucketName, string key, long length,
+            EventHandler<S3ProgressEventArgs> handler)
         {
             return handler != null
-                 ? bytes => handler(this, new ObjectTransferProgressChangedEventArgs(bucketName, key, bytes, length))
+                 ? bytes => handler(this, new S3ProgressEventArgs(bucketName, key, bytes, length))
                  : (Action<long>) null;
         }
 
