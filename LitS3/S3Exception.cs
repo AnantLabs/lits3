@@ -20,6 +20,16 @@ namespace LitS3
         /// </summary>
         public string BucketName { get; private set; }
 
+        /// <summary>
+        /// Gets the ID of the request associated with the error.
+        /// </summary>
+        public string RequestID { get; private set; }
+
+        /// <summary>
+        /// Gets the ID of the host that returned the error.
+        /// </summary>
+        public string HostID { get; private set; }
+
         public S3Exception(S3ErrorCode errorCode, string bucketName, string message, WebException innerException)
             : base(message, innerException)
         {
@@ -27,23 +37,16 @@ namespace LitS3
             this.BucketName = bucketName;
         }
 
-        internal static S3Exception FromWebException(WebException exception)
+        internal static S3Exception FromErrorResponse(XmlReader reader, WebException exception)
         {
-            HttpWebResponse response = (HttpWebResponse)exception.Response;
+            if (reader.IsEmptyElement)
+                throw new Exception("Expected a non-empty <Error> element.");
 
-            var reader = new XmlTextReader(response.GetResponseStream())
-            {
-                WhitespaceHandling = WhitespaceHandling.Significant,
-                Namespaces = false
-            };
-
-            reader.MoveToContent();
             reader.ReadStartElement("Error");
 
             S3ErrorCode errorCode = S3ErrorCode.Unknown;
-            string message = null;
-            string bucketName = null;
-
+            string message = null, bucketName = null, requestID = null, hostID = null;
+            
             while (reader.Name != "Error")
             {
                 switch (reader.Name)
@@ -57,13 +60,37 @@ namespace LitS3
                     case "BucketName":
                         bucketName = reader.ReadElementContentAsString();
                         break;
+                    case "RequestID":
+                        requestID = reader.ReadElementContentAsString();
+                        break;
+                    case "HostID":
+                        hostID = reader.ReadElementContentAsString();
+                        break;
                     default:
                         reader.Skip();
                         break;
                 }
             }
 
-            return new S3Exception(errorCode, bucketName, message, exception);
+            return new S3Exception(errorCode, bucketName, message, exception)
+            {
+                RequestID = requestID,
+                HostID = hostID
+            };
+        }
+
+        internal static S3Exception FromWebException(WebException exception)
+        {
+            HttpWebResponse response = (HttpWebResponse)exception.Response;
+
+            var reader = new XmlTextReader(response.GetResponseStream())
+            {
+                WhitespaceHandling = WhitespaceHandling.Significant,
+                Namespaces = false
+            };
+
+            reader.MoveToContent();
+            return FromErrorResponse(reader, exception);
         }
 
         static S3ErrorCode ParseCode(string code)

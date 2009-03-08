@@ -121,11 +121,11 @@ namespace LitS3
             switch (CannedAcl)
             {
                 case CannedAcl.PublicRead:
-                    WebRequest.Headers[S3Headers.CannedAclHeader] = "public-read"; break;
+                    WebRequest.Headers[S3Headers.CannedAcl] = "public-read"; break;
                 case CannedAcl.PublicReadWrite:
-                    WebRequest.Headers[S3Headers.CannedAclHeader] = "public-read-write"; break;
+                    WebRequest.Headers[S3Headers.CannedAcl] = "public-read-write"; break;
                 case CannedAcl.AuthenticatedRead:
-                    WebRequest.Headers[S3Headers.CannedAclHeader] = "authenticated-read"; break;
+                    WebRequest.Headers[S3Headers.CannedAcl] = "authenticated-read"; break;
             }
 
             if (Expires.HasValue)
@@ -134,7 +134,7 @@ namespace LitS3
             if (metadata != null)
                 foreach (string key in metadata)
                     foreach (string value in metadata.GetValues(key))
-                        WebRequest.Headers.Add(S3Headers.MetadataHeaderPrefix + key, value);
+                        WebRequest.Headers.Add(S3Headers.MetadataPrefix + key, value);
 
             base.Authorize();
         }
