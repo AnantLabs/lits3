@@ -28,17 +28,63 @@ namespace LitS3.Tests
 
         static void RunS3Tests()
         {
-            var s3 = new S3Service()
+            // Demo for the LitS3 homepage:
+
+            var s3 = new S3Service
             {
                 AccessKeyID = Settings.Default.AccessKeyID,
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
 
-            List<Bucket> buckets = s3.GetAllBuckets();
+            s3.ForEachBucket(Console.WriteLine);
 
-            buckets.ForEach(bucket => Console.WriteLine(bucket.Name));
+            //> Bucket "mybucket"
+            //> Bucket "myotherbucket"
+            //> Bucket "lits3-demo"
 
-            #region Some testing code that needs to be refactored and separated into classes
+            s3.AddObjectString("This is file one!", "lits3-demo", "File 1.txt");
+
+            s3.ForEachObject("lits3-demo", Console.WriteLine);
+
+            //> S3Object "File 1.txt"
+            //> Common Prefix "MyDirectory"
+
+            Console.WriteLine(s3.GetObjectString("lits3-demo", "File 1.txt"));
+
+            //> This is file one!
+
+            s3.CopyObject("lits3-demo", "File 1.txt", "File 1 copy.txt");
+
+            s3.ForEachObject("lits3-demo", Console.WriteLine);
+
+            //> S3Object "File 1 copy.txt"
+            //> S3Object "File 1.txt"
+            //> Common Prefix "MyDirectory"
+
+            s3.ForEachObject("lits3-demo", "MyDirectory/", Console.WriteLine);
+
+            //> S3Object "Other File.txt"
+
+            // "Need more flexibility?"
+
+            var request = new GetObjectRequest(s3, "lits3-demo", "File 1.txt");
+
+            request.BeginGetResponse(result =>
+            {
+                // comes in on a separate thread
+                using (GetObjectResponse response = request.EndGetResponse(result))
+                {
+                    StreamReader reader = new StreamReader(response.GetResponseStream());
+                    Console.WriteLine(reader.ReadToEnd());
+
+                    //> This is file one!
+                }
+            }, null);
+
+            // continues immediately without blocking...
+
+
+            #region Some more testing code that needs to be refactored and separated into classes
 
             //s3.AddObjectProgress += (s, e) => Console.WriteLine("Progress: " + e.ProgressPercentage);
             //s3.AddObjectString("Hello world", "ctu-test", "test-progress");

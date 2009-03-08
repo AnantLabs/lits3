@@ -96,6 +96,17 @@ namespace LitS3
         }
 
         /// <summary>
+        /// Performs the given action on each of your buckets without loading the list of
+        /// buckets completely into memory.
+        /// </summary>
+        public void ForEachBucket(Action<Bucket> action)
+        {
+            using (GetAllBucketsResponse response = new GetAllBucketsRequest(this).GetResponse())
+                foreach (Bucket bucket in response.Buckets)
+                    action(bucket);
+        }
+
+        /// <summary>
         /// Creates a bucket in the default storage location automatically determined by Amazon.
         /// </summary>
         /// <param name="bucketName">The name of the bucket, which will be checked against
@@ -203,10 +214,19 @@ namespace LitS3
 
         /// <summary>
         /// Queries a bucket for a listing of objects it contains and performs the given
+        /// action on each object. The DefaultDelimiter will be used.
+        /// </summary>
+        public void ForEachObject(string bucketName, Action<ListEntry> action)
+        {
+            ForEachObject(bucketName, null, action);
+        }
+
+        /// <summary>
+        /// Queries a bucket for a listing of objects it contains and performs the given
         /// action on each object. Only objects with keys beginning with the given prefix 
         /// will be returned. The DefaultDelimiter will be used.
         /// </summary>
-        public void ListAllObjects(string bucketName, string prefix, Action<ListEntry> action)
+        public void ForEachObject(string bucketName, string prefix, Action<ListEntry> action)
         {
             using (ListEntryReader reader = ListAllObjects(bucketName, prefix))
                 foreach (ListEntry entry in reader.Entries)
