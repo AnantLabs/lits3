@@ -85,5 +85,3 @@ s3.AddObjectString("Hello world", "lits3-demo", "Test File.txt");
 //> ...
 //> Progress: 100
 }}}
-
-The procedure is similar for uploading, in that case you would use `GetRequestStream()` and write data into that.
