@@ -133,7 +133,8 @@ namespace LitS3
             // S3 sent us an <Error> message.
             if (exception.Status == WebExceptionStatus.ProtocolError &&
                 exception.Response.ContentType == "application/xml" &&
-                exception.Response.ContentLength > 0)
+                (exception.Response.ContentLength > 0 || 
+                 exception.Response.Headers[HttpResponseHeader.TransferEncoding] == "chunked"))
             {
                 var wrapped = S3Exception.FromWebException(exception);
                 throw wrapped; // do this on a separate statement so the debugger can re-execute

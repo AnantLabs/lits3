@@ -35,6 +35,8 @@ namespace LitS3
 
         public override CreateBucketResponse GetResponse()
         {
+            AuthorizeIfNecessary(); // authorize before getting the request stream!
+
             // create in europe?
             if (EuropeRequested)
                 using (Stream stream = WebRequest.GetRequestStream())
