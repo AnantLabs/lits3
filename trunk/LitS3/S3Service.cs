@@ -401,6 +401,34 @@ namespace LitS3
 
         #endregion
 
+        #region CopyObject
+
+        /// <summary>
+        /// Copies an object from one bucket to another.
+        /// </summary>
+        public void CopyObject(string sourceBucketName, string sourceKey, 
+            string destBucketName, string destKey)
+        {
+            var request = new CopyObjectRequest(this, sourceBucketName, sourceKey,
+                destBucketName, destKey);
+
+            CopyObjectResponse response = request.GetResponse();
+            response.Close();
+
+            if (response.Error != null)
+                throw response.Error;
+        }
+
+        /// <summary>
+        /// Copies an object within a bucket.
+        /// </summary>
+        public void CopyObject(string bucketName, string sourceKey, string destKey)
+        {
+            CopyObject(bucketName, sourceKey, bucketName, destKey);
+        }
+
+        #endregion
+
         #region GetObject and overloads
 
         /// <summary>

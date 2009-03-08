@@ -31,7 +31,7 @@ namespace LitS3
         /// </remarks>
         public void AuthorizeRequest(HttpWebRequest request, string bucketName)
         {
-            request.Headers[S3Headers.AmazonDateHeader] = DateTime.UtcNow.ToString("r");
+            request.Headers[S3Headers.AmazonDate] = DateTime.UtcNow.ToString("r");
 
             var stringToSign = new StringBuilder()
                 .Append(request.Method).Append('\n')

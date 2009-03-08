@@ -110,16 +110,16 @@ namespace LitS3
             // look for metadata headers
             foreach (string key in WebResponse.Headers)
             {
-                if (key.StartsWith(S3Headers.MetadataHeaderPrefix))
+                if (key.StartsWith(S3Headers.MetadataPrefix))
                 {
-                    string trimmedKey = key.Substring(S3Headers.MetadataHeaderPrefix.Length);
+                    string trimmedKey = key.Substring(S3Headers.MetadataPrefix.Length);
 
                     foreach (string value in WebResponse.Headers.GetValues(key))
                         Metadata.Add(trimmedKey, value);
                 }
-                else if (key == S3Headers.MissingMetadataHeader)
+                else if (key == S3Headers.MissingMetadata)
                 {
-                    MissingMetadataHeaders = int.Parse(WebResponse.Headers[S3Headers.MissingMetadataHeader]);
+                    MissingMetadataHeaders = int.Parse(WebResponse.Headers[S3Headers.MissingMetadata]);
                 }
             }
         }
