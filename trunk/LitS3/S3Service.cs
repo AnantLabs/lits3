@@ -155,6 +155,7 @@ namespace LitS3
         {
             var request = new GetObjectRequest(this, bucketName, key, true);
 
+            // This is the recommended method from the S3 API docs.
             try
             {
                 using (GetObjectResponse response = request.GetResponse())
