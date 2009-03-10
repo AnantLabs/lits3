@@ -31,7 +31,8 @@
 
 import sys, clr, re
 
-from System import Int64, Byte, Array, Convert, Environment, PlatformID, \
+from System import \
+    DateTime, Int64, Byte, Array, Convert, Environment, PlatformID, \
     Uri, UriFormat, UriComponents, UriParser, GenericUriParser, GenericUriParserOptions
 from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
@@ -436,6 +437,18 @@ class S3Commander(object):
             raise Exception('Missing key.')
         self.s3.DeleteObject(bucket, key)
 
+    def authurl(self, args, options):
+        """Creates a pre-authorized URI valid for performing a GET."""
+        if not args:
+            raise Exception('Missing object path.')
+        bucket, key = parse_s3uri(args.pop(0))
+        if not key:
+            raise Exception('Missing key.')
+        expires = DateTime.Parse(options.get('expires', DateTime.Now.AddHours(1).ToString()))
+        print self.s3.GetAuthorizedUrl(bucket, key, expires)
+
+    authurl.opt_specs = ('expires', )
+
     def __gets(self, args):
         if not args:
             raise Exception('Missing source object path.')
@@ -496,7 +509,8 @@ Usage:
 where:
 
   COMMAND is one of:
-    ls (list), put, get, puts, gets, pops, rm (del), ids
+    ls (list), put, get, puts, gets, pops, rm (del), 
+    authurl, ids
   ARGS
     COMMAND-specific arguments
     
@@ -571,6 +585,14 @@ dir | %(this)s puts s3://foo/dir.txt
 %(this)s pops s3://foo/dir.txt
   Gets the plain text object named dir.txt in bucket foo, writes its 
   content to standard output and then removes the object.
+
+%(this)s authurl s3://foo/bar
+  Get a pre-authenticated URL for object with key bar in the 
+  bucket foo that expires in an hour
+
+%(this)s authurl s3://foo/bar --expires 2010-01-01
+  Get a pre-authenticated URL for object with key bar in the 
+  bucket foo that expires on January 1st, 2010
 """ % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
         
 def main(args):
