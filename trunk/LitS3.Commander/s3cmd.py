@@ -32,7 +32,7 @@
 import sys, clr, re
 
 from System import \
-    DateTime, Int64, Byte, Array, Convert, Environment, PlatformID, \
+    DateTime, Int64, Byte, Array, Enum, Convert, Environment, PlatformID, \
     Uri, UriFormat, UriComponents, UriParser, GenericUriParser, GenericUriParserOptions
 from System.IO import Path, FileInfo, Directory, MemoryStream, File
 from System.Text import Encoding
@@ -318,6 +318,9 @@ def parse_options(args, names, flags = None, lax = False):
 
 def lax_parse_options(args, names, flags = None):
     return parse_options(args, names, flags, True)
+    
+def parse_canned_acl_arg(arg):
+    return arg and Enum.Parse(CannedAcl, arg.replace('-', ''), True) or CannedAcl.Private
 
 class S3Commander(object):
 
@@ -385,6 +388,7 @@ class S3Commander(object):
         if not key or key[-1] == '/':
             key = (key and key or '') + Path.GetFileName(fpath)
         content_type = options.get('content-type', MIME_MAP.get(Path.GetExtension(fpath), 'application/octet-stream'))
+        acl = parse_canned_acl_arg(options.get('acl'))
         fname = Path.GetFileName(fpath)
         preamble = 'Uploading %s (%s bytes) as %s...' % (fname, FileInfo(fpath).Length.ToString('N0'), content_type)
         print preamble,
@@ -394,24 +398,27 @@ class S3Commander(object):
                 print '\r%s %s (%d%%)' % (preamble, args.BytesTransferred.ToString('N0'), args.ProgressPercentage),
         try:
             self.s3.AddObjectProgress += on_progress
-            self.s3.AddObject(fpath, bucket, key, content_type, CannedAcl.Private)
+            self.s3.AddObject(fpath, bucket, key, content_type, acl)
         finally:
             self.s3.AddObjectProgress -= on_progress
         print 'OK'
     
-    put.opt_specs = ('content-type', )
+    put.opt_specs = ('content-type', 'acl')
 
-    def puts(self, args):
+    def puts(self, args, options):
         """Puts text from standard input as an object in a bucket."""
         if not args:
             raise Exception('Missing target object for text.')
         bucket, key = parse_s3uri(args.pop(0))
         if not key:
             raise Exception('Missing key for text.')
+        acl = parse_canned_acl_arg(options.get('acl'))
         txt = sys.stdin.read()
         print 'Uploading %s characters of text...' % len(txt).ToString("N0"),
-        self.s3.AddObjectString(txt, bucket, key, 'text/plain', CannedAcl.Private)
+        self.s3.AddObjectString(txt, bucket, key, 'text/plain', acl)
         print 'OK'
+
+    puts.opt_specs = ('acl', )
 
     def get(self, args):
         """Gets an object from a bucket as a local file."""
