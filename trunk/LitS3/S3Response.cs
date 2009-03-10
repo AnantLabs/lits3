@@ -33,7 +33,7 @@ namespace LitS3
             }
         }
 
-        internal S3Response() { }
+        public S3Response() { }
 
         protected virtual void ProcessResponse() { }
 

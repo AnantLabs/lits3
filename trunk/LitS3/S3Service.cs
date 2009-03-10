@@ -546,11 +546,6 @@ namespace LitS3
 
         #region CopyStream
 
-        static void CopyStream(Stream source, Stream dest, long length)
-        {
-            CopyStream(source, dest, length, null);
-        }
-
         static void CopyStream(Stream source, Stream dest, long length, Action<long> progressCallback)
         {
             var buffer = new byte[8192];
