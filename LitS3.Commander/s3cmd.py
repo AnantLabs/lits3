@@ -40,7 +40,7 @@ from System.Environment import GetEnvironmentVariable
 clr.AddReference("System.Security")
 from System.Security.Cryptography import ProtectedData, DataProtectionScope, RNGCryptoServiceProvider
 
-clr.AddReference('LitS3')
+clr.AddReferenceToFile('LitS3.dll')
 from LitS3 import *
 
 MIME_MAP = {
