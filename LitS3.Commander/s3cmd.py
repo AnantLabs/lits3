@@ -330,10 +330,30 @@ class S3Commander(object):
             raise Exception('Unknown command (%s).' % name)
         opt_specs = getattr(cmd, 'opt_specs', None)
         if opt_specs:
-            cmd(*reversed(parse_options(args, opt_specs)))
+            flags = getattr(cmd, 'opt_flags', None)
+            cmd(*reversed(parse_options(args, opt_specs, flags)))
         else:
             cmd(parse_options(args, ())[1])
-    
+
+    def mkbkt(self, args, options):
+        """Creates a new bucket"""
+        if not args:
+            raise Exception('Missing bucket name.')
+        bucket = args.pop(0)
+        if options.get('europe', False):
+            self.s3.CreateBucketInEurope(bucket)
+        else:
+            self.s3.CreateBucket(bucket)
+
+    mkbkt.opt_specs = ('europe', )
+    mkbkt.opt_flags = ('europe', )
+
+    def rmbkt(self, args):
+        """Deletes a bucket"""
+        if not args:
+            raise Exception('Missing bucket name.')
+        self.s3.DeleteBucket(args.pop(0))
+
     def ls(self, args):
         self.list(args)
  
@@ -510,7 +530,7 @@ where:
 
   COMMAND is one of:
     ls (list), put, get, puts, gets, pops, rm (del), 
-    authurl, ids
+    authurl, mkbkt, rmbkt, ids
   ARGS
     COMMAND-specific arguments
     
@@ -593,6 +613,15 @@ dir | %(this)s puts s3://foo/dir.txt
 %(this)s authurl s3://foo/bar --expires 2010-01-01
   Get a pre-authenticated URL for object with key bar in the 
   bucket foo that expires on January 1st, 2010
+
+%(this)s mkbkt foo
+  Creates a new bucket called foo in U.S.
+
+%(this)s mkbkt foo --europe
+  Creates a new bucket called foo in E.U.
+
+%(this)s rmbkt foo
+  Deleteh the bucket called foo if it is empty
 """ % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
         
 def main(args):
