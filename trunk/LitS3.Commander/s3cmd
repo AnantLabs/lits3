@@ -8,6 +8,6 @@ if [ -z "$MY_PATH" ] ; then
   # to the script (e.g. permissions re-evaled after suid)
   exit 1  # fail
 fi
-IRONPYTHONPATH="$IRONPYTHONPATH;$LITS3_PATH;$MY_PATH/Release;$MY_PATH/Debug;$MY_PATH/../LitS3/bin/Release;$MY_PATH/../LitS3/bin/Debug"
+export IRONPYTHONPATH="$IRONPYTHONPATH;$LITS3_PATH;$MY_PATH/Release;$MY_PATH/Debug;$MY_PATH/../LitS3/bin/Release;$MY_PATH/../LitS3/bin/Debug"
 mono $MY_PATH/ipy/ipy.exe $MY_PATH/s3cmd.py "$@"
 )
