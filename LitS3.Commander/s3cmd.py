@@ -283,7 +283,7 @@ def copy_stream(source, dest, length):
 def is_windows():
     return Environment.OSVersion.Platform in (PlatformID.Win32NT, PlatformID.Win32Windows, PlatformID.Win32S, PlatformID.WinCE)
 
-def parse_options(args, names, flags = None):
+def parse_options(args, names, flags = None, lax = False):
     args = list(args) # copy for r/w
     required = [name[:-1] for name in names if '!' == name[-1:]]
     all = [name.rstrip('!') for name in names]
@@ -298,7 +298,10 @@ def parse_options(args, names, flags = None):
             if not name: # comment
                 break
             if not name in all:
-                raise Exception('Unknown argument: %s' % name)
+                if not lax:
+                    raise Exception('Unknown argument: %s' % name)
+                anon.append(arg)
+                continue
             if flags and name in flags:
                 options[name] = True
             elif args:
@@ -312,10 +315,23 @@ def parse_options(args, names, flags = None):
             raise Exception('Missing required argument: %s' % name)
     return options, anon
 
+def lax_parse_options(args, names, flags = None):
+    return parse_options(args, names, flags, True)
+
 class S3Commander(object):
-    
+
     def __init__(self, s3):
         self.s3 = s3
+
+    def __call__(self, name, args):
+        cmd = getattr(self, name, None)        
+        if not cmd:
+            raise Exception('Unknown command (%s).' % name)
+        opt_specs = getattr(cmd, 'opt_specs', None)
+        if opt_specs:
+            cmd(*reversed(parse_options(args, opt_specs)))
+        else:
+            cmd(parse_options(args, ())[1])
     
     def ls(self, args):
         self.list(args)
@@ -337,7 +353,7 @@ class S3Commander(object):
                         obj.Size.ToString('N0'),
                         obj.Key[len(prefix):])
 
-    def put(self, args):
+    def put(self, args, options):
         """Puts a local file as an object in a bucket."""
         if not args:
             raise Exception('Missing target object path.')
@@ -347,7 +363,7 @@ class S3Commander(object):
         fpath = args.pop(0)
         if not key or key[-1] == '/':
             key = (key and key or '') + Path.GetFileName(fpath)
-        content_type = MIME_MAP.get(Path.GetExtension(fpath), 'application/octet-stream')
+        content_type = options.get('content-type', MIME_MAP.get(Path.GetExtension(fpath), 'application/octet-stream'))
         fname = Path.GetFileName(fpath)
         preamble = 'Uploading %s (%s bytes) as %s...' % (fname, FileInfo(fpath).Length.ToString('N0'), content_type)
         print preamble,
@@ -361,6 +377,8 @@ class S3Commander(object):
         finally:
             self.s3.AddObjectProgress -= on_progress
         print 'OK'
+    
+    put.opt_specs = ('content-type', )
 
     def puts(self, args):
         """Puts text from standard input as an object in a bucket."""
@@ -527,6 +545,10 @@ Examples:
   Add local file named ani.gif as key images/animation.gif 
   in bucket foo
  
+%(this)s put s3://foo/script script --content-type text/plain
+  Add local file named script as key script in bucket foo and
+  set its content type to plain text
+
 %(this)s get s3://foo/index.html
   Get object with key index.html in bucket foo as local file named 
   index.html
@@ -556,15 +578,15 @@ def main(args):
     if not args:
         raise Exception('Missing command. Try help.')
     
-    cmd_name = args.pop(0).replace('del', 'rm') # pop + alias
-    if 'help' == cmd_name:
+    cmd = args.pop(0).replace('del', 'rm') # pop + alias
+    if 'help' == cmd:
         print_help()
         return
 
     ids_fpath = GetEnvironmentVariable('AWS_IDS_FILE') or app_lpath('aws-ids')
     saved_id, saved_key = File.Exists(ids_fpath) and load_aws_ids(ids_fpath) or (None, None)
 
-    options, args = parse_options(args, ('aws-key-id', 'aws-secret-key'))
+    options, args = lax_parse_options(args, ('aws-key-id', 'aws-secret-key'))
 
     id = options.get('aws-key-id', '-')
     if id == '-':
@@ -578,7 +600,7 @@ def main(args):
     if not key:
         raise Exception('Missing AWS secret access key.')
 
-    if 'ids' == cmd_name:
+    if 'ids' == cmd:
         ids_fpath = args and args.pop(0) or ids_fpath
         save_aws_ids(ids_fpath, id, key)
         print 'AWS identifiers securely saved to:'
@@ -586,14 +608,7 @@ def main(args):
         return
 
     s3 = S3Service(AccessKeyID = id, SecretAccessKey = key)
-    
-    commander = S3Commander(s3)
-    cmd = getattr(commander, cmd_name, None)
-    
-    if not cmd:
-        raise Exception('Unknown command (%s).' % cmd_name)
-    
-    cmd(args)
+    S3Commander(s3)(cmd, args)
 
 if __name__ == '__main__':
     try:
