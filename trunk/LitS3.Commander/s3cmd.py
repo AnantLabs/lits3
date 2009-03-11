@@ -328,7 +328,7 @@ class S3Commander(object):
         self.s3 = s3
 
     def __call__(self, name, args):
-        cmd = getattr(self, name, None)        
+        cmd = getattr(self, name.replace('del', 'rm').replace('ls', 'list'), None)
         if not cmd:
             raise Exception('Unknown command (%s).' % name)
         opt_specs = getattr(cmd, 'opt_specs', None)
@@ -356,26 +356,29 @@ class S3Commander(object):
         if not args:
             raise Exception('Missing bucket name.')
         self.s3.DeleteBucket(args.pop(0))
-
-    def ls(self, args):
-        self.list(args)
  
-    def list(self, args):
+    def list(self, args, options):
         """Lists all buckets or objects in a bucket, optionally constrained by a prefix."""
+        brief = options.get('brief', False)
         if not args:
+            buckets = self.s3.GetAllBuckets()
             print '\n'.join(
-                ['%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in self.s3.GetAllBuckets()])
+                [brief and b.Name or '%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in buckets])
         else:
             bucket, prefix = parse_s3uri(args.pop(0))
             objs = self.s3.ListObjects(bucket, prefix)
             for obj in objs:
                 if type(obj) == CommonPrefix:
-                    print ' ' * 53 + obj.Prefix
+                    display = brief and obj.Prefix or ' ' * 53 + obj.Prefix
                 else:
-                    print '%s  %20s  %s' % (
+                    display = brief and obj.Key[len(prefix):] or '%s  %20s  %s' % (
                         obj.LastModified.ToString('r'), 
                         obj.Size.ToString('N0'),
                         obj.Key[len(prefix):])
+                print display
+
+    list.opt_specs = ('brief', )
+    list.opt_flags = ('brief', )
 
     def put(self, args, options):
         """Puts a local file as an object in a bucket."""
@@ -636,7 +639,7 @@ def main(args):
     if not args:
         raise Exception('Missing command. Try help.')
     
-    cmd = args.pop(0).replace('del', 'rm') # pop + alias
+    cmd = args.pop(0)
     if 'help' == cmd:
         print_help()
         return
