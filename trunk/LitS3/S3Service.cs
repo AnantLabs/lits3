@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Net;
 
@@ -89,10 +90,10 @@ namespace LitS3
         /// <summary>
         /// Lists all buckets owned by you.
         /// </summary>
-        public List<Bucket> GetAllBuckets()
+        public IList<Bucket> GetAllBuckets()
         {
             using (GetAllBucketsResponse response = new GetAllBucketsRequest(this).GetResponse())
-                return new List<Bucket>(response.Buckets);
+                return response.Buckets.ToList();
         }
 
         /// <summary>
@@ -188,7 +189,7 @@ namespace LitS3
         /// be used. If you expect a large number of objects to be returned, consider using
         /// ListAllObjects().
         /// </summary>
-        public List<ListEntry> ListObjects(string bucketName, string prefix)
+        public IList<ListEntry> ListObjects(string bucketName, string prefix)
         {
             var args = new ListObjectsArgs { Prefix = prefix, Delimiter = DefaultDelimiter };
             var request = new ListObjectsRequest(this, bucketName, args);
@@ -198,7 +199,7 @@ namespace LitS3
                 if (response.IsTruncated)
                     throw new Exception("The server truncated the list of items requested. Consider using the ListObjectsRequest class to query for large numbers of items.");
 
-                return new List<ListEntry>(response.Entries);
+                return response.Entries.ToList();
             }
         }
 
