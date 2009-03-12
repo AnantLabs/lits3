@@ -631,7 +631,7 @@ dir | %(this)s puts s3://foo/dir.txt
   Creates a new bucket called foo in E.U.
 
 %(this)s rmbkt foo
-  Deleteh the bucket called foo if it is empty
+  Delete the bucket called foo if it is empty
 """ % { 'this': Path.GetFileNameWithoutExtension(sys.argv[0]) }
         
 def main(args):
