@@ -7,8 +7,7 @@ namespace LitS3
     /// <summary>
     /// The base class for all S3 requests.
     /// </summary>
-    public abstract class S3Request<TResponse>
-        where TResponse : S3Response, new()
+    public abstract class S3Request
     {
         string bucketName; // remember this for signing the request later
 
@@ -124,10 +123,10 @@ namespace LitS3
             if (S3Authorizer.IsAuthorized(WebRequest))
                 throw new InvalidOperationException("This request has already been authorized.");
 
-            Service.Authorizer.AuthorizeRequest(WebRequest, bucketName);
+            Service.AuthorizeRequest(this, WebRequest, bucketName);
         }
 
-        void TryThrowS3Exception(WebException exception)
+        protected void TryThrowS3Exception(WebException exception)
         {
             // if this is a protocol error and the response type is XML, we can expect that
             // S3 sent us an <Error> message.
@@ -139,6 +138,33 @@ namespace LitS3
                 var wrapped = S3Exception.FromWebException(exception);
                 throw wrapped; // do this on a separate statement so the debugger can re-execute
             }
+        }
+    }
+
+    /// <summary>
+    /// Describes an event involving an S3Request.
+    /// </summary>
+    public class S3RequestArgs : EventArgs
+    {
+        public S3Request Request { get; private set; }
+
+        public S3RequestArgs(S3Request request)
+        {
+            this.Request = request;
+        }
+    }
+
+    /// <summary>
+    /// Common base class for all concrete S3Requests, pairs each one tightly with its S3Response
+    /// counterpart.
+    /// </summary>
+    public abstract class S3Request<TResponse> : S3Request
+        where TResponse : S3Response, new()
+    {
+        internal S3Request(S3Service service, string method, string bucketName, string objectKey,
+            string queryString)
+            : base(service, method, bucketName, objectKey, queryString)
+        {
         }
 
         /// <summary>

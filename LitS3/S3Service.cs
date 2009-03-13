@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Net;
+using System.Text;
 
 namespace LitS3
 {
@@ -15,8 +15,6 @@ namespace LitS3
         string secretAccessKey;
         S3Authorizer authorizer;
 
-        internal S3Authorizer Authorizer { get { return authorizer; } }
-
         /// <summary>
         /// Reports progress for any operation that adds an object to a bucket.
         /// </summary>
@@ -26,6 +24,13 @@ namespace LitS3
         /// Reports progress for any operation that gets an object from a bucket.
         /// </summary>
         public event EventHandler<S3ProgressEventArgs> GetObjectProgress;
+
+        /// <summary>
+        /// Fired before an S3Request operating against this service is authorized and sent
+        /// out to the S3 server. This is a good opportunity to modify every S3Request 
+        /// created internally by this class, for instance, to set the Proxy server or ServicePoint.
+        /// </summary>
+        public event EventHandler<S3RequestArgs> BeforeAuthorize;
 
         /// <summary>
         /// Gets or sets the hostname of the s3 server, usually "s3.amazonaws.com" unless you
@@ -64,7 +69,7 @@ namespace LitS3
             set
             {
                 secretAccessKey = value;
-                authorizer = new S3Authorizer(this);
+                authorizer = !string.IsNullOrEmpty(value) ? new S3Authorizer(this) : null;
             }
         }
 
@@ -83,6 +88,18 @@ namespace LitS3
             this.UseSsl = true;
             this.UseSubdomains = true;
             this.DefaultDelimiter = "/";
+        }
+
+        internal void AuthorizeRequest(S3Request request, HttpWebRequest webRequest, string bucketName)
+        {
+            if (BeforeAuthorize != null)
+                BeforeAuthorize(this, new S3RequestArgs(request));
+
+            // if you haven't set a secret access key, we can't authorize anything! maybe
+            // you're talking to a mock S3 server. At any rate, the server will complain
+            // if it expects the authorization.
+            if (authorizer != null)
+                authorizer.AuthorizeRequest(webRequest, bucketName);
         }
 
         #region Basic Operations
