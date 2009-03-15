@@ -226,9 +226,45 @@ namespace LitS3
         /// be used. This method returns a ListEntryReader which is capable of reading an unlimited
         /// number of objects. You must close the reader when you are finished with it.
         /// </summary>
-        public ListEntryReader ListAllObjects(string bucketName, string prefix)
+        public IEnumerable<ListEntry> ListAllObjects(string bucketName, string prefix)
         {
-            return new ListEntryReader(this, bucketName, prefix, DefaultDelimiter);
+            var args = new ListObjectsArgs
+            {
+                Prefix = prefix,
+                Delimiter = DefaultDelimiter
+            };
+
+            while (true)
+            {
+                var request = new ListObjectsRequest(this, bucketName, args);
+
+                using (var response = request.GetResponse())
+                {
+                    ListEntry lastEntry = null;
+
+                    foreach (var entry in response.Entries)
+                    {
+                        lastEntry = entry;
+                        yield return entry;
+                    }
+
+                    if (response.IsTruncated)
+                    {
+                        // if you specified a delimiter, S3 is supposed to give us the marker
+                        // name to use in order to get the next set of "stuff".
+                        if (response.NextMarker != null)
+                            args.Marker = response.NextMarker;
+                        // if you didn't specify a delimiter, you won't get any CommonPrefixes,
+                        // so we'll use the last ObjectEntry's key as the next delimiter.
+                        else if (lastEntry is ObjectEntry)
+                            args.Marker = (lastEntry as ObjectEntry).Key;
+                        else
+                            throw new Exception("S3 Server is misbehaving.");
+                    }
+                    else
+                        break; // we're done!
+                }
+            }
         }
 
         /// <summary>
@@ -247,9 +283,8 @@ namespace LitS3
         /// </summary>
         public void ForEachObject(string bucketName, string prefix, Action<ListEntry> action)
         {
-            using (ListEntryReader reader = ListAllObjects(bucketName, prefix))
-                foreach (ListEntry entry in reader.Entries)
-                    action(entry);
+            foreach (ListEntry entry in ListAllObjects(bucketName, prefix))
+                action(entry);
         }
 
         /// <summary>

@@ -65,7 +65,6 @@
     <Compile Include="Identity.cs" />
     <Compile Include="ListEntries.cs" />
     <Compile Include="ListObjects.cs" />
-    <Compile Include="ListEntryReader.cs" />
     <Compile Include="ObjectTransfer.cs" />
     <Compile Include="S3Authorizer.cs" />
     <Compile Include="S3ErrorCode.cs" />
