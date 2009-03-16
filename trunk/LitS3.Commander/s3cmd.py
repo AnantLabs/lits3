@@ -366,7 +366,7 @@ class S3Commander(object):
                 [brief and b.Name or '%s  %s' % (b.CreationDate.ToString('r'), b.Name) for b in buckets])
         else:
             bucket, prefix = parse_s3uri(args.pop(0))
-            objs = self.s3.ListObjects(bucket, prefix)
+            objs = self.s3.ListAllObjects(bucket, prefix)
             for obj in objs:
                 if type(obj) == CommonPrefix:
                     display = brief and obj.Prefix or ' ' * 53 + obj.Prefix
