@@ -221,17 +221,34 @@ namespace LitS3
         }
 
         /// <summary>
+        /// Queries a bucket for a listing of all objects it contains. The DefaultDelimiter will
+        /// be used.
+        /// </summary>
+        public IEnumerable<ListEntry> ListAllObjects(string bucketName)
+        {
+            return ListAllObjects(bucketName, null, DefaultDelimiter);
+        }
+
+        /// <summary>
         /// Queries a bucket for a listing of objects it contains. Only objects with keys
         /// beginning with the given prefix will be returned. The DefaultDelimiter will
-        /// be used. This method returns a ListEntryReader which is capable of reading an unlimited
-        /// number of objects. You must close the reader when you are finished with it.
+        /// be used.
         /// </summary>
         public IEnumerable<ListEntry> ListAllObjects(string bucketName, string prefix)
+        {
+            return ListAllObjects(bucketName, prefix, DefaultDelimiter);
+        }
+
+        /// <summary>
+        /// Queries a bucket for a listing of objects it contains. Only objects with keys
+        /// beginning with the given prefix will be returned.
+        /// </summary>
+        public IEnumerable<ListEntry> ListAllObjects(string bucketName, string prefix, string delimiter)
         {
             var args = new ListObjectsArgs
             {
                 Prefix = prefix,
-                Delimiter = DefaultDelimiter
+                Delimiter = delimiter
             };
 
             while (true)
