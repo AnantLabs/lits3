@@ -49,7 +49,9 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets or sets the cache policy for this request.
+        /// Gets or sets the cache policy for this request as the raw HTTP header you would like
+        /// S3 to return along with your object when requested. An example value for this might
+        /// be "max-age=3600, must-revalidate".
         /// </summary>
         public string CachePolicy { get; set; }
 
