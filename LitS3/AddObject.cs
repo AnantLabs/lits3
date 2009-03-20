@@ -49,11 +49,11 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets or sets the cache policy for this request as the raw HTTP header you would like
+        /// Gets or sets the cache control for this request as the raw HTTP header you would like
         /// S3 to return along with your object when requested. An example value for this might
         /// be "max-age=3600, must-revalidate".
         /// </summary>
-        public string CachePolicy { get; set; }
+        public string CacheControl { get; set; }
 
         /// <summary>
         /// Gets or sets the MIME type of this object. It will be stored by S3 and returned as a
@@ -129,8 +129,8 @@ namespace LitS3
             if (Expires.HasValue)
                 WebRequest.Headers[HttpRequestHeader.Expires] = Expires.Value.ToUniversalTime().ToString("r");
 
-            if (CachePolicy != null)
-                WebRequest.Headers[HttpRequestHeader.CacheControl] = CachePolicy;
+            if (CacheControl != null)
+                WebRequest.Headers[HttpRequestHeader.CacheControl] = CacheControl;
 
             if (metadata != null)
                 foreach (string key in metadata)
