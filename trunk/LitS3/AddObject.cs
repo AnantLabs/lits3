@@ -51,11 +51,7 @@ namespace LitS3
         /// <summary>
         /// Gets or sets the cache policy for this request.
         /// </summary>
-        public RequestCachePolicy CachePolicy
-        {
-            get { return WebRequest.CachePolicy; }
-            set { WebRequest.CachePolicy = value; }
-        }
+        public string CachePolicy { get; set; }
 
         /// <summary>
         /// Gets or sets the MIME type of this object. It will be stored by S3 and returned as a
@@ -130,6 +126,9 @@ namespace LitS3
 
             if (Expires.HasValue)
                 WebRequest.Headers[HttpRequestHeader.Expires] = Expires.Value.ToUniversalTime().ToString("r");
+
+            if (CachePolicy != null)
+                WebRequest.Headers[HttpRequestHeader.CacheControl] = CachePolicy;
 
             if (metadata != null)
                 foreach (string key in metadata)
