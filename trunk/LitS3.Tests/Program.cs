@@ -36,6 +36,40 @@ namespace LitS3.Tests
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
 
+            /*string etag;
+
+            {
+                var request = new AddObjectRequest(s3, "lits3-demo", "File 1.txt");
+                request.ContentLength = 0;
+                request.Metadata.Add("sky", "blue");
+                var response = request.GetResponse();
+                etag = response.ETag;
+                Console.WriteLine("ETag: " + etag);
+            }
+
+            {
+                var request = new CopyObjectRequest(s3, "lits3-demo", "File 1.txt", "File 1 copy.txt");
+                //request.CopyIfNoneMatchETag = etag;
+                request.MetadataDirective = MetadataDirective.Replace;
+                //request.Metadata.Add("shoes", "brown");
+                request.GetResponse();
+            }
+
+            {
+                var request = new GetObjectRequest(s3, "lits3-demo", "File 1.txt", true);
+                var response = request.GetResponse();
+                Console.WriteLine("Sky on file1 is " + response.Metadata.Get("sky"));
+            }
+
+            Console.WriteLine("File2 exists? " + s3.ObjectExists("lits3-demo", "File 2.txt"));
+
+            {
+                var request = new GetObjectRequest(s3, "lits3-demo", "File 1 copy.txt", true);
+                var response = request.GetResponse();
+                Console.WriteLine("Sky on file2 is " + response.Metadata.Get("sky"));
+                Console.WriteLine("Shoes on file2 are " + response.Metadata.Get("shoes"));
+            }*/
+
             /*s3.ForEachBucket(Console.WriteLine);
 
             //> Bucket "mybucket"

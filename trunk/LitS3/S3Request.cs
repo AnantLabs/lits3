@@ -136,7 +136,8 @@ namespace LitS3
                  exception.Response.Headers[HttpResponseHeader.TransferEncoding] == "chunked"))
             {
                 var wrapped = S3Exception.FromWebException(exception);
-                throw wrapped; // do this on a separate statement so the debugger can re-execute
+                if (wrapped != null)
+                    throw wrapped; // do this on a separate statement so the debugger can re-execute
             }
         }
     }
