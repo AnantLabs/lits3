@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Xml;
+using System.IO;
 
 namespace LitS3
 {
@@ -83,14 +84,22 @@ namespace LitS3
         {
             HttpWebResponse response = (HttpWebResponse)exception.Response;
 
-            var reader = new XmlTextReader(response.GetResponseStream())
+            // we need to check the response stream first to make sure there's actually
+            // XML in the response. S3 sometimes sends error responses with content-type XML
+            // and content-encoding chunked, then no actual data!
+            var streamReader = new StreamReader(response.GetResponseStream());
+
+            if (streamReader.EndOfStream)
+                return null;
+            
+            var xmlReader = new XmlTextReader(streamReader)
             {
                 WhitespaceHandling = WhitespaceHandling.Significant,
                 Namespaces = false
             };
-
-            reader.MoveToContent();
-            return FromErrorResponse(reader, exception);
+            
+            xmlReader.MoveToContent();
+            return FromErrorResponse(xmlReader, exception);
         }
 
         static S3ErrorCode ParseCode(string code)

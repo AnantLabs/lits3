@@ -6,7 +6,7 @@ using System.Text;
 
 namespace LitS3
 {
-    class S3Authorizer
+    class S3Authorizer : IComparer<string>
     {
         S3Service service;
         HMACSHA1 signer;
@@ -54,7 +54,7 @@ namespace LitS3
 
             if (query == "?acl" || query == "?location" || query == "?logging" || query == "?torrent")
                 stringToSign.Append(query);
-
+            Console.WriteLine("Signing " + stringToSign);
             string signed = Sign(stringToSign.ToString());
             
             string authorization = string.Format("AWS {0}:{1}", service.AccessKeyID, signed);
@@ -75,9 +75,22 @@ namespace LitS3
             return Sign(stringToSign.ToString());
         }
 
-        static void AppendCanonicalizedAmzHeaders(HttpWebRequest request, StringBuilder stringToSign)
+        /// <summary>
+        /// Implements string comparison for the purpose of sorting amazon request headers
+        /// lexographically. The default string.Compare() is "interesting", in that it
+        /// attempts to sort words according to current locale settings. What we want is
+        /// the old-school sorting based on the numeric value of each char, which is
+        /// what CompareOrdinal does.
+        /// </summary>
+        public int Compare(string x, string y)
         {
-            var amzHeaders = new SortedList<string, string[]>();
+            return string.CompareOrdinal(x, y);
+        }
+
+        void AppendCanonicalizedAmzHeaders(HttpWebRequest request, StringBuilder stringToSign)
+        {
+            // specify ourself as the sorter so we can use string.CompareOrdinal.
+            var amzHeaders = new SortedList<string, string[]>(this);
 
             foreach (string header in request.Headers)
                 if (header.StartsWith(S3Headers.AmazonHeaderPrefix))
