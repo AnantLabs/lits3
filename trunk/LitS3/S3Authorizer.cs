@@ -54,7 +54,7 @@ namespace LitS3
 
             if (query == "?acl" || query == "?location" || query == "?logging" || query == "?torrent")
                 stringToSign.Append(query);
-            Console.WriteLine("Signing " + stringToSign);
+            
             string signed = Sign(stringToSign.ToString());
             
             string authorization = string.Format("AWS {0}:{1}", service.AccessKeyID, signed);
