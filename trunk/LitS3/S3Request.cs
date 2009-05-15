@@ -104,8 +104,16 @@ namespace LitS3
         }
 
         /// <summary>
-        /// Gets the service point to use for this request.
+        /// Gets the service point to use for this request. See remarks on this property if you
+        /// plan on using Expect100Continue.
         /// </summary>
+        /// <remarks>
+        /// In specific circumstances, the S3 request will hang indefinitely if Expect100Continue is 
+        /// set to true and S3 immediately responds with a HTTP 5xx server error after the request is 
+        /// issued and before any data is written to the stream. The downside to leaving this property 
+        /// at false is that you'll waste bandwidth and time if S3 knows the PUT is going to fail at 
+        /// the very start of the request.
+        /// </remarks>
         public ServicePoint ServicePoint
         {
             get { return WebRequest.ServicePoint; }
