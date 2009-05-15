@@ -19,7 +19,8 @@ namespace LitS3
             : base(service, "PUT", bucketName, objectKey, null)
         {
             this.CannedAcl = CannedAcl.Private;
-            WebRequest.ServicePoint.Expect100Continue = true;
+            // disabled for now - results in flaky behavior (see remarks on S3Request.ServicePoint)
+            // WebRequest.ServicePoint.Expect100Continue = true;
             WebRequest.AllowWriteStreamBuffering = false; // important! we could be sending a LOT of data
         }
 
