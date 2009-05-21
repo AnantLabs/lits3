@@ -36,9 +36,7 @@ namespace LitS3.Tests
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
 
-            s3.UseSsl = false;
-            s3.AddObject(@"\Users\nick\Pictures\wood.jpeg".Replace('\\',Path.DirectorySeparatorChar), 
-                "lits3-demo", "bigfile-timeouts.mp3");
+            //s3.ForEachBucket(Console.WriteLine);
 
             /*string etag;
 

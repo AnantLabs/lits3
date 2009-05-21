@@ -86,7 +86,6 @@ namespace LitS3
         {
             this.Host = "s3.amazonaws.com";
             this.UseSsl = true;
-            this.UseSubdomains = true;
             this.DefaultDelimiter = "/";
         }
 
@@ -392,13 +391,14 @@ namespace LitS3
         public void AddObject(string bucketName, string key, long bytes, string contentType,
             CannedAcl acl, Action<Stream> action)
         {
-            var request = new AddObjectRequest(this, bucketName, key) { ContentLength = bytes };
+            var request = new AddObjectRequest(this, bucketName, key)
+            {
+                ContentLength = bytes,
+                CannedAcl = acl
+            };
 
             if (contentType != null) // if specified
                 request.ContentType = contentType;
-
-            if (acl != default(CannedAcl))
-                request.CannedAcl = acl;
 
             request.PerformWithRequestStream(action);
         }
@@ -496,6 +496,22 @@ namespace LitS3
         #region CopyObject
 
         /// <summary>
+        /// Copies an object from one bucket to another with the given canned ACL.
+        /// </summary>
+        public void CopyObject(string sourceBucketName, string sourceKey,
+            string destBucketName, string destKey, CannedAcl acl)
+        {
+            var request = new CopyObjectRequest(this, sourceBucketName, sourceKey,
+                destBucketName, destKey) { CannedAcl = acl };
+
+            CopyObjectResponse response = request.GetResponse();
+            response.Close();
+
+            if (response.Error != null)
+                throw response.Error;
+        }
+
+        /// <summary>
         /// Copies an object from one bucket to another.
         /// </summary>
         public void CopyObject(string sourceBucketName, string sourceKey, 
@@ -509,6 +525,14 @@ namespace LitS3
 
             if (response.Error != null)
                 throw response.Error;
+        }
+
+        /// <summary>
+        /// Copies an object within a bucket and assigns the given canned ACL.
+        /// </summary>
+        public void CopyObject(string bucketName, string sourceKey, string destKey, CannedAcl acl)
+        {
+            CopyObject(bucketName, sourceKey, bucketName, destKey, acl);
         }
 
         /// <summary>
