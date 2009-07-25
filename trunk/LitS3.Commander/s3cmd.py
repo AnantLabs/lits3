@@ -527,12 +527,28 @@ def load_aws_ids(path):
     entropy, id, key = [Convert.FromBase64String(line) for line in lines]
     return unprotect_user_str(id, entropy), unprotect_user_str(key, entropy)
        
-def print_help():
+def print_help(args):
     print """LitS3 Commander - $Revision$
 Command-line interface to LitS3
 http://lits3.googlecode.com/
+"""
+    options, args = parse_options(args, ('version', ), ('version', ))
+    
+    if options.get('version', False):
+        from System import AppDomain
+        from System.Diagnostics import DebuggableAttribute
+        asm = clr.GetClrType(S3Service).Assembly
+        asm_name = asm.GetName()
+        print 'Using %s %s from:' % (asm_name.Name, asm_name.Version)
+        cb = Uri(asm.CodeBase)
+        print cb.IsFile and cb.LocalPath or cb
+        print
+        print 'Assemblies:'
+        print
+        print '\n'.join([str(asm) for asm in AppDomain.CurrentDomain.GetAssemblies()])
+        return
 
-Usage:
+    print """Usage:
 
   %(this)s COMMAND ARGS
  
@@ -540,7 +556,8 @@ where:
 
   COMMAND is one of:
     ls (list), put, get, puts, gets, pops, rm (del), 
-    authurl, mkbkt, rmbkt, ids
+    authurl, mkbkt, rmbkt, ids, 
+    about
   ARGS
     COMMAND-specific arguments
     
@@ -641,7 +658,7 @@ def main(args):
     
     cmd = args.pop(0)
     if 'help' == cmd:
-        print_help()
+        print_help(args)
         return
 
     ids_fpath = GetEnvironmentVariable('AWS_IDS_FILE') or app_lpath('aws-ids')
