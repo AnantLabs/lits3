@@ -36,6 +36,13 @@ namespace LitS3.Tests
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
 
+            //s3.UseSubdomains = true;
+            //s3.CreateBucketInEurope("lits3-demo-europe");
+            
+            s3.AddObjectString("Bonjour Europe!", "lits3-demo-europe", "bonjour.txt");
+
+            Console.WriteLine(s3.GetObjectString("lits3-demo-europe", "bonjour.txt"));
+
             //s3.ForEachBucket(Console.WriteLine);
 
             /*string etag;
