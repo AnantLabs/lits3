@@ -45,7 +45,8 @@ namespace LitS3
 
         /// <summary>
         /// Gets or sets whether to prepend the bucket name as a subdomain when accessing a bucket.
-        /// This defaults to true, and is Amazon's preferred method.
+        /// This is Amazon's preferred method, however the property defaults to false for greater
+        /// compatibility with existing buckets.
         /// </summary>
         public bool UseSubdomains { get; set; }
 
