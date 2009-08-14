@@ -648,7 +648,7 @@ namespace LitS3
             if (progressCallback != null)
                 progressCallback(0);
 
-            var totalBytesRead = 0;
+            long totalBytesRead = 0;
             while (totalBytesRead < length) // reuse this local var
             {
                 int bytesRead = source.Read(buffer, 0, buffer.Length);
