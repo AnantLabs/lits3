@@ -45,6 +45,11 @@ namespace LitS3
                 throw new Exception("A GetAllBuckets request was rejected by the S3 server. Did you forget to authorize the request?");
         }
 
+        /// <summary>
+        /// Gets the HTTP headers returned along with the S3 response.
+        /// </summary>
+        public WebHeaderCollection Headers { get { return response.Headers; } }
+
         XmlReader CreateXmlReader()
         {
             var reader = new XmlTextReader(WebResponse.GetResponseStream())
