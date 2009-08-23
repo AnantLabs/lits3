@@ -70,7 +70,7 @@ namespace LitS3
 
             // construct CanonicalizedResource, always /bucket/key
             stringToSign.Append('/').Append(bucketName);
-            stringToSign.Append('/').Append(Uri.EscapeDataString(key));
+            stringToSign.Append('/').Append(key.EscapeS3Key());
 
             return Sign(stringToSign.ToString());
         }
@@ -137,6 +137,17 @@ namespace LitS3
         public static long SecondsSinceEpoch(this DateTime date)
         {
             return (long)((date.ToUniversalTime() - Epoch).TotalSeconds);
+        }
+    }
+
+    static class S3KeysExtension
+    {
+        public static string EscapeS3Key(this string key)
+        {
+            // EscapeDataString allows you to use basically any key for an object, including
+            // keys with tricky URI characters like "+". But it also escapes forward-slashes,
+            // which ARE allowed.
+            return Uri.EscapeDataString(key).Replace("%2F", "/");
         }
     }
 }

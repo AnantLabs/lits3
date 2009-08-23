@@ -348,7 +348,7 @@ namespace LitS3
                 uriString.Append(bucketName).Append('/');
 
             // EscapeDataString allows keys to have any characters, including "+".
-            uriString.Append(Uri.EscapeDataString(key));
+            uriString.Append(key.EscapeS3Key());
 
             return uriString.ToString();
         }

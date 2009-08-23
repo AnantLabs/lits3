@@ -28,20 +28,40 @@ namespace LitS3.Tests
 
         static void RunS3Tests()
         {
-            // Demo for the LitS3 homepage:
+            // This is basically a bunch of testing code written either for the LitS3 homepage
+            // or to attempt to reproduce various submitted issues.
 
             var s3 = new S3Service
             {
                 AccessKeyID = Settings.Default.AccessKeyID,
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
-
+            
             //s3.UseSubdomains = true;
             //s3.CreateBucketInEurope("lits3-demo-europe");
-            
-            s3.AddObjectString("Bonjour Europe!", "lits3-demo-europe", "bonjour.txt");
+            s3.UseSsl = false;
+            //s3.BeforeAuthorize += (o, a) => { a.Request.Proxy = new WebProxy("http://192.168.104.1:7777"); };
 
-            Console.WriteLine(s3.GetObjectString("lits3-demo-europe", "bonjour.txt"));
+            s3.AddObjectString("hello world", "lits3-demo", "stuff/hello.txt");
+
+            Console.WriteLine(s3.GetAuthorizedUrl("lits3-demo", "stuff/hello.txt", DateTime.Now.AddYears(1)));
+
+            Console.WriteLine(string.Join(",", s3.ListObjects("lits3-demo", "stuff/").Select(e => e.Name).ToArray()));
+
+            /*var addRequest = new AddObjectRequest(s3, "lits3-demo", "File 1.txt");
+            addRequest.ContentLength = 0;
+            addRequest.CacheControl = "max-age=3000, must-revalidate";
+            addRequest.Expires = DateTime.Now.Date.AddYears(10);
+            addRequest.GetResponse();
+
+            var getRequest = new GetObjectRequest(s3, "lits3-demo", "File 1.txt");
+            GetObjectResponse getResponse = getRequest.GetResponse();
+            Console.WriteLine("Expires: " + getResponse.Headers[HttpResponseHeader.Expires]);
+            Console.WriteLine("CacheControl: " + getResponse.Headers[HttpResponseHeader.CacheControl]);*/
+
+            //s3.AddObjectString("Bonjour Europe!", "lits3-demo-europe", "bonjour.txt");
+
+            //Console.WriteLine(s3.GetObjectString("lits3-demo-europe", "bonjour.txt"));
 
             //s3.ForEachBucket(Console.WriteLine);
 
