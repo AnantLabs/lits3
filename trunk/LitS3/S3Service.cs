@@ -329,7 +329,7 @@ namespace LitS3
         /// It is not authorized, so it will only work for objects with anonymous read access.
         /// This method itself does not communicate with S3 and will return immediately.
         /// </summary>
-        public string GetUrl(string bucketName, string key)
+        public Uri GetUri(string bucketName, string key)
         {
             var uriString = new StringBuilder();
             uriString.Append("http://");
@@ -350,7 +350,7 @@ namespace LitS3
             // EscapeDataString allows keys to have any characters, including "+".
             uriString.Append(key.EscapeS3Key());
 
-            return uriString.ToString();
+            return new Uri(uriString.ToString());
         }
 
         /// <summary>
@@ -359,26 +359,16 @@ namespace LitS3
         /// (such as a web browser). The Uri will automatically expire after the time given.
         /// This method itself does not communicate with S3 and will return immediately.
         /// </summary>
-        /// <remarks>
-        /// You might expect this method to return a System.Uri instead of a string. It turns out
-        /// there is a tricky issue with constructing Uri objects from these pre-authenticated
-        /// url strings: The Uri.ToString() method will convert a properly-encoded "+" character back
-        /// into a raw "+", which is interpreted by Amazon S3 as a space (standard URI conventions).
-        /// So the signature will be misread if you were to take the Uri.ToString() and feed
-        /// it to a browser. So instead, we'll give you a properly escaped URL string which 
-        /// will always work in a browser. If you want to, say, use it in a WebRequest instead, 
-        /// it turns out that WebRequest will leave it escaped properly and everything will work.
-        /// </remarks>
-        public string GetAuthorizedUrl(string bucketName, string key, DateTime expires)
+        public Uri GetAuthorizedUri(string bucketName, string key, DateTime expires)
         {
             string authorization = authorizer.AuthorizeQueryString(bucketName, key, expires);
             
-            var uriString = new StringBuilder(GetUrl(bucketName, key))
+            var uriString = new StringBuilder(GetUri(bucketName, key).AbsoluteUri)
                 .Append("?AWSAccessKeyId=").Append(AccessKeyID)
                 .Append("&Expires=").Append(expires.SecondsSinceEpoch())
                 .Append("&Signature=").Append(Uri.EscapeDataString(authorization));
 
-            return uriString.ToString();
+            return new Uri(uriString.ToString());
         }
 
         #endregion
