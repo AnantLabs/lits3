@@ -37,16 +37,23 @@ namespace LitS3.Tests
                 SecretAccessKey = Settings.Default.SecretAccessKey
             };
             
-            //s3.UseSubdomains = true;
+            s3.UseSubdomains = true;
             //s3.CreateBucketInEurope("lits3-demo-europe");
             s3.UseSsl = false;
-            //s3.BeforeAuthorize += (o, a) => { a.Request.Proxy = new WebProxy("http://192.168.104.1:7777"); };
+            s3.BeforeAuthorize += (o, a) => { a.Request.Proxy = new WebProxy("http://192.168.104.1:7777"); };
 
-            s3.AddObjectString("hello world", "lits3-demo", "stuff/hello world.txt", "text/plain", default(CannedAcl));
+            string bucket = "lits3-fashionable" + new Random().Next();
 
-            Console.WriteLine(s3.GetAuthorizedUri("lits3-demo", "stuff/hello world.txt", DateTime.Now.AddYears(1)).AbsoluteUri);
+            s3.CreateBucketInEurope(bucket);
+            //s3.AddObjectString("hello world", bucket, "hello.txt");
+            s3.ListAllObjects(bucket);
+            s3.DeleteBucket(bucket);
 
-            Console.WriteLine(string.Join(",", s3.ListObjects("lits3-demo", "stuff/").Select(e => e.Name).ToArray()));
+            //s3.AddObjectString("hello world", "lits3-demo", "stuff/hello world.txt", "text/plain", default(CannedAcl));
+
+            //Console.WriteLine(s3.GetAuthorizedUri("lits3-demo", "stuff/hello world.txt", DateTime.Now.AddYears(1)).AbsoluteUri);
+
+            //Console.WriteLine(string.Join(",", s3.ListObjects("lits3-demo", "stuff/").Select(e => e.Name).ToArray()));
 
             /*var addRequest = new AddObjectRequest(s3, "lits3-demo", "File 1.txt");
             addRequest.ContentLength = 0;

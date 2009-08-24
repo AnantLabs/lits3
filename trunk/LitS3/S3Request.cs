@@ -54,6 +54,9 @@ namespace LitS3
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(uri);
             request.Method = method;
             request.AllowWriteStreamBuffering = true; // AddObject will make this false
+            request.AllowAutoRedirect = false; // we can't allow auto-redirecting because then the authorization header will be invalid!
+
+            // temporary until we can figure out how to transparently resend requests
             request.AllowAutoRedirect = true;
 
             // S3 will never "timeout" a request. However, network delays may still cause a
@@ -183,7 +186,12 @@ namespace LitS3
 
             try
             {
-                return new TResponse { WebResponse = (HttpWebResponse)WebRequest.GetResponse() };
+                var response = (HttpWebResponse)WebRequest.GetResponse();
+
+                //if (response.StatusCode == HttpStatusCode.TemporaryRedirect)
+
+
+                return new TResponse { WebResponse = response };
             }
             catch (WebException exception)
             {
