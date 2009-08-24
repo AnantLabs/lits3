@@ -73,6 +73,10 @@ namespace LitS3
                 }
             }
 
+            // catch a common case
+            if (errorCode == S3ErrorCode.PermanentRedirect)
+                message += " [LitS3: You might try setting S3Service.UseSubdomains to true]";
+
             return new S3Exception(errorCode, bucketName, message, exception)
             {
                 RequestID = requestID,
